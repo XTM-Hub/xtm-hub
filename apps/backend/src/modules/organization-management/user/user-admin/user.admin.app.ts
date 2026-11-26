@@ -236,11 +236,13 @@ export const UserAdminApp = {
       throw new Error(ErrorCode.PendingUserNotFound);
     }
 
-    return UserHelper.acceptPendingUserWithCapabilities({
+    const user = await UserHelper.acceptPendingUserWithCapabilities({
       user_id: userId,
       organization_id: organizationId,
       orgCapabilities: input.capabilities,
     });
+    await UserHelper.refreshUserSessions(userId);
+    return user;
   },
 
   bulkAcceptPendingUserInOrganization: async (
@@ -275,6 +277,7 @@ export const UserAdminApp = {
             organization_id: organizationId,
             orgCapabilities: [],
           });
+          await UserHelper.refreshUserSessions(userId);
         } catch (error) {
           logApp.error('Error while accepting user in organization', {
             error,

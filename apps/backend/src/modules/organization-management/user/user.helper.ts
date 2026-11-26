@@ -60,6 +60,9 @@ export const isUserLastOrganizationAdministrator = async (
  * Rewrite the user's active sessions from a fresh loadUserBy, the shape the
  * @auth directive expects (loadUserDetails lacks selected_org_capabilities and
  * capabilities). A disabled user loses its sessions.
+ * Call it after the outermost transaction commits: it must not publish
+ * uncommitted capabilities, nor hold a transaction connection while the
+ * session store takes another one from the pool.
  */
 const refreshUserSessions = async (userId: UserId): Promise<void> => {
   let user: UserLoadUserBy | undefined;
@@ -92,8 +95,6 @@ const updateUserCapabilities = async ({
       organization_id,
       orgCapabilities,
     });
-
-    await refreshUserSessions(user_id);
 
     return UserDomain.loadUserDetails({
       'User.id': user_id,
@@ -299,6 +300,7 @@ export const UserHelper = {
       organization_id,
       orgCapabilities,
     });
+    await refreshUserSessions(user_id);
 
     await dispatch('User', 'edit', user);
     await dispatch('MeUser', 'edit', userMapped, 'User');

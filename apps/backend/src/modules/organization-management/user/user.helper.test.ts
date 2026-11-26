@@ -14,6 +14,7 @@ import * as pub from '../../../pub';
 import * as sessionStoreManager from '../../../session-store-manager';
 import { ErrorCode, NotFoundErrorCode } from '../../../utils/error/error.code';
 import { UserDomain } from './user-domain/user.domain';
+import { UserOrganizationDomain } from './user-organization/user-organization.domain';
 import { UserHelper } from './user.helper';
 
 describe('userHelper', () => {
@@ -114,22 +115,37 @@ describe('userHelper', () => {
       vi.spyOn(pub, 'dispatch').mockResolvedValue();
       const simpleUserId =
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID;
+      const organizationId = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+      // Helper test files skip the database reset: put the seeded user back
+      const { capabilities: originalCapabilities } =
+        await UserDomain.loadUserCapabilitiesByOrganization(
+          simpleUserId,
+          organizationId
+        );
 
-      // When
-      await UserHelper.updateUserOrgCapabilitiesAndDispatch({
-        user_id: simpleUserId,
-        organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-        orgCapabilities: [OrganizationCapability.ManageAccess],
-      });
+      try {
+        // When
+        await UserHelper.updateUserOrgCapabilitiesAndDispatch({
+          user_id: simpleUserId,
+          organization_id: organizationId,
+          orgCapabilities: [OrganizationCapability.ManageAccess],
+        });
 
-      // Then
-      expect(updateUserSessionSpy).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({
-          id: simpleUserId,
-          selected_org_capabilities: [OrganizationCapability.ManageAccess],
-          capabilities: expect.any(Array),
-        })
-      );
+        // Then
+        expect(updateUserSessionSpy).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({
+            id: simpleUserId,
+            selected_org_capabilities: [OrganizationCapability.ManageAccess],
+            capabilities: expect.any(Array),
+          })
+        );
+      } finally {
+        await UserOrganizationDomain.updateUserOrgCapabilities({
+          user_id: simpleUserId,
+          organization_id: organizationId,
+          orgCapabilities: (originalCapabilities ?? []).filter(Boolean),
+        });
+      }
     });
   });
 
