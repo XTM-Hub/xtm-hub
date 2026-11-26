@@ -23,7 +23,7 @@ import {
 } from './news-feed.helper';
 import {
   blogpostProductMapping,
-  githubReleasePlatformIdentifiers,
+  githubReleaseRepositoryMapping,
   NEWS_FEED_INTERNAL_METADATA_KEYS,
   newsFeedConfigurationMapping,
 } from './news-feed.model';
@@ -135,7 +135,7 @@ export const NewsFeedDomain = {
       doesPlatformSupportBlogpostNewsFeed(platformIdentifier, platformVersion);
 
     const supportsGithubRelease =
-      githubReleasePlatformIdentifiers.includes(platformIdentifier) &&
+      githubReleaseRepositoryMapping[platformIdentifier] !== undefined &&
       doesPlatformSupportGithubReleaseNewsFeed(
         platformIdentifier,
         platformVersion

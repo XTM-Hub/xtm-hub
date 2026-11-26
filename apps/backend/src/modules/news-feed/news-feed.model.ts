@@ -50,9 +50,13 @@ export const blogpostProductMapping: Record<
   [FiligranProduct.Openaev]: PlatformIdentifier.Openaev,
 };
 
-export const githubReleasePlatformIdentifiers: PlatformIdentifier[] = [
-  PlatformIdentifier.Opencti,
-];
+// GitHub repository (owner/name) of the releases of each product that gets a GITHUB_RELEASE item
+export const githubReleaseRepositoryMapping: Partial<
+  Record<PlatformIdentifier, string>
+> = {
+  [PlatformIdentifier.Opencti]: 'OpenCTI-Platform/opencti',
+  [PlatformIdentifier.Openaev]: 'OpenAEV-Platform/openaev',
+};
 
 // Metadata keys that only serve the Hub (document lookup, external destination of a redirect): they are never
 // returned to the consumers of the news feed, which only read url_path.

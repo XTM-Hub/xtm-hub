@@ -265,6 +265,37 @@ describe('newsFeedDomain', () => {
         expect(result).not.toContain(NewsFeedItemType.GithubRelease);
       });
 
+      it('should list the GitHub release type for OpenAEV when the gate of its track passes', () => {
+        // Given
+        setRequiredVersions({
+          nonLts: '3.261104.0',
+          lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+        });
+
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Openaev,
+          '3.261104.0'
+        );
+
+        // Then
+        expect(result).toContain(NewsFeedItemType.GithubRelease);
+      });
+
+      it('should not list the GitHub release type for OpenAEV when the gate of its track is null', () => {
+        // Given
+        setRequiredVersions({ nonLts: null, lts: null });
+
+        // When
+        const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
+          PlatformIdentifier.Openaev,
+          '99.0.0'
+        );
+
+        // Then
+        expect(result).not.toContain(NewsFeedItemType.GithubRelease);
+      });
+
       it('should not list the GitHub release type for a platform that is not mapped to a GitHub release product', () => {
         // Given
         setRequiredVersions({
@@ -274,7 +305,7 @@ describe('newsFeedDomain', () => {
 
         // When
         const result = NewsFeedDomain.loadAvailableNewsFeedTypes(
-          PlatformIdentifier.Openaev,
+          PlatformIdentifier.Xtmone,
           '99.0.0'
         );
 

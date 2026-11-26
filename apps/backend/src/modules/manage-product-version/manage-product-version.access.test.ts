@@ -5,6 +5,7 @@ import {
   ForbiddenErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
+import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { ManifestApp } from '../shareable-resource/manifest/manifest.app';
 import { ManageProductVersionApp } from './manage-product-version.app';
 
@@ -19,7 +20,11 @@ describe('newProductVersion mutation', () => {
     operation: `mutation ($product: PlatformIdentifier!, $version: String!) {
       newProductVersion(product: $product, version: $version) { success }
     }`,
-    guarded: () => vi.spyOn(ManageProductVersionApp, 'registerProductVersion'),
+    // Mocked: it would create a news feed item, and it is the one step every product goes through
+    guarded: () =>
+      vi
+        .spyOn(NewsFeedApp, 'createGithubReleaseNewsFeedItem')
+        .mockResolvedValue(undefined),
     expected: {
       anonymous: UnauthenticatedErrorCode.Unauthenticated,
       user: UnauthenticatedErrorCode.Unauthenticated,

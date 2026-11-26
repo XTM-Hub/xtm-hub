@@ -2,7 +2,9 @@ import config from 'config';
 import {
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
+  PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
+import { githubReleaseRepositoryMapping } from './news-feed.model';
 
 export interface NewsFeedDestination {
   url: string;
@@ -21,7 +23,10 @@ interface NewsFeedDestinationDefinition {
   getHost: () => string;
   forwardUtmParams: boolean;
   // Returns undefined when the metadata cannot produce a safe destination
-  buildUrl: (metadata: NewsFeedMetadataValues) => string | undefined;
+  buildUrl: (
+    metadata: NewsFeedMetadataValues,
+    platformIdentifier: PlatformIdentifier
+  ) => string | undefined;
 }
 
 // A single simple path segment: alphanumeric words joined by single '.', '_' or '-'.
@@ -32,8 +37,6 @@ const SAFE_PATH_SEGMENT_MAX_LENGTH = 200;
 
 const FILIGRAN_BLOG_PATH = '/blog/';
 const GITHUB_ORIGIN = 'https://github.com';
-const OPENCTI_GITHUB_RELEASE_TAG_PATH =
-  '/OpenCTI-Platform/opencti/releases/tag/';
 
 const getBlogBaseUrl = (): string => config.get<string>('blog_api.base_url');
 
@@ -117,12 +120,17 @@ export const NewsFeedDestinationRegistry: Partial<
   [NewsFeedItemType.GithubRelease]: {
     getHost: () => new URL(GITHUB_ORIGIN).hostname,
     forwardUtmParams: false,
-    buildUrl: (metadata) =>
-      NewsFeedRedirectHelper.buildUrlWithSegment({
+    buildUrl: (metadata, platformIdentifier) => {
+      const repository = githubReleaseRepositoryMapping[platformIdentifier];
+      if (!repository) {
+        return undefined;
+      }
+      return NewsFeedRedirectHelper.buildUrlWithSegment({
         origin: GITHUB_ORIGIN,
-        pathPrefix: OPENCTI_GITHUB_RELEASE_TAG_PATH,
+        pathPrefix: `/${repository}/releases/tag/`,
         segment: metadata[NewsFeedItemMetadataKey.ProductVersion],
-      }),
+      });
+    },
   },
 };
 
@@ -132,7 +140,8 @@ export const shouldAddUtmToUrlPath = (type: NewsFeedItemType): boolean =>
 
 export const buildNewsFeedDestination = (
   type: NewsFeedItemType,
-  metadata: NewsFeedMetadataValues
+  metadata: NewsFeedMetadataValues,
+  platformIdentifier: PlatformIdentifier
 ): NewsFeedDestination | undefined => {
   // Own property only: the type column is a free string, so 'constructor' must not resolve to a builder
   if (!Object.hasOwn(NewsFeedDestinationRegistry, type)) {
@@ -142,7 +151,7 @@ export const buildNewsFeedDestination = (
   if (!definition) {
     return undefined;
   }
-  const url = definition.buildUrl(metadata);
+  const url = definition.buildUrl(metadata, platformIdentifier);
   if (!url) {
     return undefined;
   }

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   NewsFeedItemMetadataKey,
   NewsFeedItemType,
+  PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
 import {
   buildNewsFeedDestination,
@@ -29,6 +30,8 @@ const BLOG_POST_URL = `${config.get<string>('blog_api.base_url')}/blog/${BLOG_PO
 const GITHUB_HOST = 'github.com';
 const OPENCTI_RELEASES_URL =
   'https://github.com/OpenCTI-Platform/opencti/releases/tag';
+const OPENAEV_RELEASES_URL =
+  'https://github.com/OpenAEV-Platform/openaev/releases/tag';
 
 const UNSAFE_SEGMENTS: [string, string][] = [
   ['a slash', 'a/b'],
@@ -177,10 +180,14 @@ describe('news-feed-redirect.helper', () => {
 
   describe('buildNewsFeedDestination', () => {
     it('should build the blog post destination from the blog_post_slug metadata', () => {
-      const destination = buildNewsFeedDestination(NewsFeedItemType.BlogPost, {
-        [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG,
-        [NewsFeedItemMetadataKey.UrlPath]: 'redirect/news-feed/ignored',
-      });
+      const destination = buildNewsFeedDestination(
+        NewsFeedItemType.BlogPost,
+        {
+          [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG,
+          [NewsFeedItemMetadataKey.UrlPath]: 'redirect/news-feed/ignored',
+        },
+        PlatformIdentifier.Opencti
+      );
 
       expect(destination).toEqual({
         url: BLOG_POST_URL,
@@ -194,9 +201,11 @@ describe('news-feed-redirect.helper', () => {
         key === 'blog_api.base_url' ? 'https://blog.test' : realConfigGet?.(key)
       );
 
-      const destination = buildNewsFeedDestination(NewsFeedItemType.BlogPost, {
-        [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG,
-      });
+      const destination = buildNewsFeedDestination(
+        NewsFeedItemType.BlogPost,
+        { [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG },
+        PlatformIdentifier.Opencti
+      );
 
       expect(destination?.url).toBe(`https://blog.test/blog/${BLOG_POST_SLUG}`);
       expect(destination?.host).toBe('blog.test');
@@ -210,33 +219,66 @@ describe('news-feed-redirect.helper', () => {
       ['no blog_post_slug', {}],
     ])('should refuse a blog post with %s', (_description, metadata) => {
       expect(
-        buildNewsFeedDestination(NewsFeedItemType.BlogPost, metadata)
+        buildNewsFeedDestination(
+          NewsFeedItemType.BlogPost,
+          metadata,
+          PlatformIdentifier.Opencti
+        )
       ).toBeUndefined();
     });
 
     it.each([
-      ['a non-LTS', '7.261201.0'],
-      ['an LTS', '7.260309.0-lts.8'],
+      [
+        'an OpenCTI non-LTS',
+        PlatformIdentifier.Opencti,
+        '7.261201.0',
+        OPENCTI_RELEASES_URL,
+      ],
+      [
+        'an OpenCTI LTS',
+        PlatformIdentifier.Opencti,
+        '7.260309.0-lts.8',
+        OPENCTI_RELEASES_URL,
+      ],
+      [
+        'an OpenAEV',
+        PlatformIdentifier.Openaev,
+        '3.261104.0',
+        OPENAEV_RELEASES_URL,
+      ],
     ])(
-      'should build the OpenCTI release tag destination when the product_version is %s version',
-      (_description, productVersion) => {
+      'should build the release tag destination of the repository of the platform when the release is %s version',
+      (_description, platformIdentifier, productVersion, releasesUrl) => {
         // When
         const destination = buildNewsFeedDestination(
           NewsFeedItemType.GithubRelease,
           {
             [NewsFeedItemMetadataKey.ProductVersion]: productVersion,
             [NewsFeedItemMetadataKey.UrlPath]: 'redirect/news-feed/ignored',
-          }
+          },
+          platformIdentifier
         );
 
         // Then
         expect(destination).toEqual({
-          url: `${OPENCTI_RELEASES_URL}/${productVersion}`,
+          url: `${releasesUrl}/${productVersion}`,
           host: GITHUB_HOST,
           forwardUtmParams: false,
         });
       }
     );
+
+    it('should refuse a GitHub release of a platform identifier without GitHub repository', () => {
+      // When
+      const destination = buildNewsFeedDestination(
+        NewsFeedItemType.GithubRelease,
+        { [NewsFeedItemMetadataKey.ProductVersion]: '1.0.0' },
+        PlatformIdentifier.Xtmone
+      );
+
+      // Then
+      expect(destination).toBeUndefined();
+    });
 
     it.each([
       [
@@ -256,7 +298,8 @@ describe('news-feed-redirect.helper', () => {
       // When
       const destination = buildNewsFeedDestination(
         NewsFeedItemType.GithubRelease,
-        metadata
+        metadata,
+        PlatformIdentifier.Opencti
       );
 
       // Then
@@ -273,9 +316,11 @@ describe('news-feed-redirect.helper', () => {
       'UNKNOWN_TYPE',
     ])('should have no destination for the type "%s"', (type) => {
       expect(
-        buildNewsFeedDestination(type as NewsFeedItemType, {
-          [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG,
-        })
+        buildNewsFeedDestination(
+          type as NewsFeedItemType,
+          { [NewsFeedItemMetadataKey.BlogPostSlug]: BLOG_POST_SLUG },
+          PlatformIdentifier.Opencti
+        )
       ).toBeUndefined();
     });
   });

@@ -43,10 +43,13 @@ docs {
   
   Behaviour:
   - Any invalid version is rejected (INVALID_PLATFORM_VERSION), LTS or not. The LTS suffix must be lowercase (-lts.N).
-  - A non-LTS version requests the connector manifest generation and registers the version.
-  - An LTS version (-lts.N suffix) skips the manifest generation and the registration.
-  - For opencti, every valid version also creates one GITHUB_RELEASE news feed item, once per version (a later call
-    with the same version does nothing, even once the item is deleted), provisioned to the active OpenCTI platforms on the
-    same release track (LTS or not) whose version passes the gate of that track. This step runs in the background
-    and never fails the mutation.
+  - For opencti, a non-LTS version requests the connector manifest generation and registers the version. An LTS
+    version (-lts.N suffix) skips both.
+  - For openaev, never a manifest generation nor a registration, whatever the version. Example: product openaev,
+    version 3.261104.0 only creates the news feed item below.
+  - For opencti and openaev, every valid version also creates one GITHUB_RELEASE news feed item, once per product
+    and version (a later call with the same version does nothing, even once the item is deleted), provisioned to
+    the active platforms of that product on the same release track (LTS or not) whose version passes the gate of
+    that track. It redirects to the release tag of the GitHub repository of the product. This step runs in the
+    background and never fails the mutation.
 }

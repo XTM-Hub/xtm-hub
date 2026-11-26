@@ -44,7 +44,7 @@ import {
 import {
   BlogpostProduct,
   blogpostProductMapping,
-  githubReleasePlatformIdentifiers,
+  githubReleaseRepositoryMapping,
   NEWS_FEED_INTERNAL_METADATA_KEYS,
   newsFeedConfigurationMapping,
 } from './news-feed.model';
@@ -274,7 +274,11 @@ export const NewsFeedApp = {
     const metadata: NewsFeedMetadataValues = Object.fromEntries(
       newsFeedItem.metadata.map(({ key, value }) => [key, value])
     );
-    const destination = buildNewsFeedDestination(newsFeedItem.type, metadata);
+    const destination = buildNewsFeedDestination(
+      newsFeedItem.type,
+      metadata,
+      newsFeedItem.platform_identifier
+    );
     if (!destination) {
       return undefined;
     }
@@ -466,7 +470,8 @@ export const NewsFeedApp = {
     }
   },
 
-  // No lock: a plain lookup, then the write. newProductVersion is called once per release.
+  // No lock: a plain lookup, then the write. newProductVersion is called once per release. Should two calls overlap,
+  // the unique index makes the loser fail and roll back its transaction.
   createGithubReleaseNewsFeedItem: async ({
     product,
     version,
@@ -474,7 +479,7 @@ export const NewsFeedApp = {
     product: PlatformIdentifier;
     version: string;
   }): Promise<void> => {
-    if (!githubReleasePlatformIdentifiers.includes(product)) {
+    if (githubReleaseRepositoryMapping[product] === undefined) {
       return;
     }
 
