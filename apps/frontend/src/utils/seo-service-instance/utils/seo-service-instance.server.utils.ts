@@ -1,6 +1,9 @@
 import type { PublicLocale } from '@/i18n/config';
 import { toGraphqlLocale } from '@/i18n/graphql-locale';
-import { GraphqlRequestError } from '@/lib/graphql-fetch.utils';
+import {
+  GraphqlRequestError,
+  NOT_FOUND_ERROR_CODE,
+} from '@/lib/graphql-fetch.utils';
 import {
   serverGraphqlFetch,
   ServerGraphqlFetchOptions,
@@ -22,8 +25,6 @@ import {
   ServiceInstanceSeoMetadataByIdQueryVariables,
   ServiceInstanceTag,
 } from '@graphql/generated';
-
-const NOT_FOUND_ERROR_CODE = 'NOT_FOUND';
 
 const PUBLIC_PAGE_CACHE: ServerGraphqlFetchOptions = {
   cache: 'force-cache',

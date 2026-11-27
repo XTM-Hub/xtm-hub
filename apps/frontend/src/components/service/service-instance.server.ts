@@ -1,4 +1,5 @@
 import { getAuthenticatedGraphqlClient } from '@/lib/graphql-client';
+import { NOT_FOUND_ERROR_CODE } from '@/lib/graphql-fetch.utils';
 import { redirectToSignupOnUnauthenticated } from '@/lib/server-unauthenticated-redirect';
 import {
   type ServiceInstanceItemFragment,
@@ -17,7 +18,7 @@ import {
 const SERVICE_INSTANCE_LOOKUP_ERRORS = new Set([
   'SERVICE_INSTANCE_NOT_FOUND',
   'SERVICE_INSTANCE_NOT_PUBLIC',
-  'NOT_FOUND',
+  NOT_FOUND_ERROR_CODE,
 ]);
 
 const isServiceInstanceLookupError = (error: unknown) =>
