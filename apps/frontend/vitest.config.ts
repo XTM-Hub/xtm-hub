@@ -2,7 +2,6 @@ import { fileURLToPath } from 'node:url';
 
 import react from '@vitejs/plugin-react';
 import type { PluginOption } from 'vite';
-import relay from 'vite-plugin-relay';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -10,7 +9,6 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@app': fileURLToPath(new URL('./app', import.meta.url)),
-      '@generated': fileURLToPath(new URL('./__generated__', import.meta.url)),
       '@graphql': fileURLToPath(new URL('./graphql', import.meta.url)),
       '@messages': fileURLToPath(new URL('./messages', import.meta.url)),
       '@public': fileURLToPath(new URL('./public', import.meta.url)),
@@ -20,7 +18,7 @@ export default defineConfig({
   ssr: {
     noExternal: [/@uiw\/.*/],
   },
-  plugins: [react() as PluginOption, relay as PluginOption],
+  plugins: [react() as PluginOption],
   test: {
     globals: true,
     environment: 'jsdom',
@@ -40,7 +38,6 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.mjs',
         '**/*.config.*',
-        '**/__generated__/**',
         '*.lintstagedrc.js',
         'middleware.ts',
         'graphql/mocks.ts',

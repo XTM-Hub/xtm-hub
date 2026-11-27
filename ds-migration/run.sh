@@ -286,8 +286,7 @@ merge_base() {
 
 # The checks that must still pass on the branch after a merge of the base branch. <spec paths>
 sync_checks() {
-  yarn workspace @xtm-hub/frontend relay &&
-    yarn workspace @xtm-hub/frontend check-ts &&
+  yarn workspace @xtm-hub/frontend check-ts &&
     yarn workspace @xtm-hub/frontend lint &&
     { [ -z "$1" ] || node ds-migration/validate.mjs --imports-only $1; }
 }

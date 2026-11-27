@@ -1,9 +1,0 @@
-{
-  "src": "./",
-  "excludes": ["graphql/**", ".next/**", "node_modules/**", "__generated__/**"],
-  "language": "typescript",
-  "schema": "schema.graphql",
-  "eagerEsModules": true,
-  "artifactDirectory": "./__generated__",
-  "noFutureProofEnums": true
-}

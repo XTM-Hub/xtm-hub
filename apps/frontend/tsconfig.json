@@ -23,7 +23,6 @@
     "paths": {
       "@/*": ["./src/*"],
       "@graphql/*": ["./graphql/*"],
-      "@generated/*": ["./__generated__/*"],
       "@styles/*": ["./styles/*"],
       "@public/*": ["./public/*"],
       "@app/*": ["./app/*"],

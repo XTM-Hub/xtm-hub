@@ -58,9 +58,6 @@ jobs:
       - name: Generate backend GraphQL types
         run: yarn workspace @xtm-hub/backend generate:ts
 
-      - name: Generate frontend Relay artifacts
-        run: yarn workspace @xtm-hub/frontend relay
-
       # Next generates `next-env.d.ts` (which declares the SVG and route
       # modules) during dev/build only. Without it `check-ts` reports around
       # twenty phantom "Cannot find module '@public/*.svg'" errors.
