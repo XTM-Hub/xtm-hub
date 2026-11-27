@@ -1,0 +1,155 @@
+{{- if and (include "gatewayApi.enabled" $) .Values.gatewayApi.migrateManagement }}
+{{- include "gatewayApi.validate" $ }}
+{{- $host := tpl .Values.xtmhub.host . }}
+{{- $kibanaAnnotations := .Values.kibana.ingress.annotations | default dict }}
+{{- $kibanaWhitelist := .Values.kibana.ingress.whitelistSourceRange }}
+{{- if hasKey $kibanaAnnotations "nginx.ingress.kubernetes.io/allowlist-source-range" }}
+{{- $kibanaWhitelist = index $kibanaAnnotations "nginx.ingress.kubernetes.io/allowlist-source-range" | default "" }}
+{{- else if hasKey $kibanaAnnotations "nginx.ingress.kubernetes.io/whitelist-source-range" }}
+{{- $kibanaWhitelist = index $kibanaAnnotations "nginx.ingress.kubernetes.io/whitelist-source-range" | default "" }}
+{{- end }}
+{{- /* The elasticsearch Ingress stays on nginx: its backend is HTTPS and its annotations carry the mTLS settings. */ -}}
+{{- $services := list
+      (dict "key" "minio"   "enabled" true "host" (printf "s3.%s" $host)      "secret" "xtmhub-cert-minio"   "backend" "minio"                             "port" 80   "whitelist" .Values.minio.ingressWhitelistSourceRange     "ttl" "120" "probePath" "minio/health/live" "buffer" "256Mi" "timeout" "0s")
+      (dict "key" "pgadmin" "enabled" true "host" (printf "pgadmin.%s" $host) "secret" "xtmhub-cert-pgadmin" "backend" (printf "%s-pgadmin" .Release.Name) "port" 80   "whitelist" .Values.postgres.pgadmin.whitelistSourceRange "ttl" "120" "buffer" "256Mi" "timeout" "0s")
+      (dict "key" "kibana"  "enabled" (and .Values.kibana.enabled .Values.kibana.ingress.enabled) "host" (printf "kibana.%s" $host) "secret" "xtmhub-cert-kibana" "backend" "kibana-kb-http" "port" 5601 "whitelist" $kibanaWhitelist "buffer" "512Mi" "timeout" "0s" "streamIdle" "1800s") }}
+{{- $root := . }}
+{{- range $svc := $services }}
+{{- if and $svc.enabled (not (trim ($svc.whitelist | toString))) }}
+{{- fail (printf "gatewayApi.migrateManagement=true requires an IP whitelist for %s: set its whitelist source range" $svc.key) }}
+{{- end }}
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-management-listeners
+spec:
+  parentRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: {{ .Values.gatewayApi.pool.name }}
+    namespace: {{ .Values.gatewayApi.pool.namespace }}
+  listeners:
+    {{- range $svc := $services }}
+    {{- if $svc.enabled }}
+    - name: {{ $svc.key }}
+      protocol: HTTPS
+      port: 443
+      hostname: {{ $svc.host }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ $svc.secret }}
+        {{- if $root.Values.gatewayApi.minTlsVersion }}
+        options:
+          kgateway.dev/min-tls-version: {{ $root.Values.gatewayApi.minTlsVersion | quote }}
+        {{- end }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+    {{- end }}
+    {{- end }}
+---
+{{- range $svc := $services }}
+{{- if $svc.enabled }}
+{{- if not (include "gatewayApi.ingressEnabled" $root) }}
+# cert-manager does not watch ListenerSets: the certificate is requested explicitly. While the
+# Ingress exists, its cert-manager shim already creates a Certificate for this secret
+# (chart/docs/gateway-api-migration.md describes the handover of an existing Certificate).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $svc.secret }}
+spec:
+  secretName: {{ $svc.secret }}
+  issuerRef:
+    name: {{ $root.Values.tls_issuer }}
+    kind: ClusterIssuer
+  dnsNames:
+    - {{ $svc.host }}
+---
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $root.Release.Namespace }}-{{ $root.Release.Name }}-{{ $svc.key }}-route
+  annotations:
+    {{- if not (include "gatewayApi.dnsOnGateway" $root) }}
+    external-dns.alpha.kubernetes.io/controller: ignore
+    {{- end }}
+    {{- if $svc.ttl }}
+    external-dns.alpha.kubernetes.io/ttl: {{ $svc.ttl | quote }}
+    {{- end }}
+    {{- if $svc.probePath }}
+    blackbox.io/path: {{ $svc.probePath }}
+    {{- end }}
+    prometheus.io/probe: "true"
+spec:
+  hostnames:
+    - {{ $svc.host }}
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: {{ $root.Release.Namespace }}-{{ $root.Release.Name }}-management-listeners
+      sectionName: {{ $svc.key }}
+  rules:
+    - backendRefs:
+        - name: {{ $svc.backend }}
+          port: {{ $svc.port }}
+      timeouts:
+        request: {{ $svc.timeout }}
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: {{ $root.Release.Namespace }}-{{ $root.Release.Name }}-{{ $svc.key }}-policy
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ $root.Release.Namespace }}-{{ $root.Release.Name }}-{{ $svc.key }}-route
+  acl:
+    defaultAction: deny
+    rules:
+      - name: management-whitelist
+        cidrs:
+          {{- range splitList "," $svc.whitelist }}
+          - {{ . | trim }}
+          {{- end }}
+        action: allow
+  {{- if $svc.streamIdle }}
+  timeouts:
+    streamIdle: {{ $svc.streamIdle }}
+  {{- end }}
+  buffer:
+    maxRequestSize: {{ $svc.buffer }}
+---
+{{- end }}
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-management-redirect
+  annotations:
+    # redirect routes never own DNS: the HTTPS routes are the single DNS source
+    external-dns.alpha.kubernetes.io/controller: ignore
+spec:
+  hostnames:
+    {{- range $svc := $services }}
+    {{- if $svc.enabled }}
+    - {{ $svc.host }}
+    {{- end }}
+    {{- end }}
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.gatewayApi.pool.name }}
+      namespace: {{ .Values.gatewayApi.pool.namespace }}
+      sectionName: http
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- end }}

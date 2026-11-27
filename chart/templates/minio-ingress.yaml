@@ -1,9 +1,14 @@
 ---
+{{- if or (include "gatewayApi.ingressEnabled" $) (not .Values.gatewayApi.migrateManagement) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Namespace}}-{{ .Release.Name }}-ingress-minio
   annotations:
+    {{- if and (include "gatewayApi.dnsOnGateway" $) .Values.gatewayApi.migrateManagement }}
+    # the DNS is on the gateway routes, the Ingress must let go
+    external-dns.alpha.kubernetes.io/controller: ignore
+    {{- end }}
     blackbox.io/path: minio/health/live
     cert-manager.io/cluster-issuer: {{ .Values.tls_issuer }}
     external-dns.alpha.kubernetes.io/hostname: s3.{{ .Values.xtmhub.host }}
@@ -38,3 +43,4 @@ spec:
   - hosts:
     - s3.{{ .Values.xtmhub.host }}
     secretName: xtmhub-cert-minio
+{{- end }}

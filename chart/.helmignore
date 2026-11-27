@@ -1,0 +1,3 @@
+# Keep the unit tests and the runbook out of the packaged chart
+tests/
+docs/

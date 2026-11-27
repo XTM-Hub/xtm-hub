@@ -1,0 +1,57 @@
+# The product route and its listener.
+suite: gateway API route
+templates:
+  - templates/gateway.yaml
+release:
+  name: rel
+  namespace: ns
+capabilities:
+  apiVersions:
+    - gateway.networking.k8s.io/v1
+    - gateway.kgateway.dev/v1alpha1
+set:
+  gatewayApi.mode: kgateway
+  xtmhub.host: hub.example.io
+tests:
+  - it: serves the host from its own listener, with the minimum TLS version
+    set:
+      gatewayApi.minTlsVersion: "1.3"
+    asserts:
+      - equal:
+          path: spec.listeners[0].hostname
+          value: hub.example.io
+        documentSelector:
+          path: kind
+          value: ListenerSet
+      - equal:
+          path: spec.listeners[0].tls.options["kgateway.dev/min-tls-version"]
+          value: "1.3"
+        documentSelector:
+          path: kind
+          value: ListenerSet
+
+  - it: sends everything to the front with no overall request deadline
+    asserts:
+      - lengthEqual:
+          path: spec.rules
+          count: 1
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-route
+      - equal:
+          path: spec.rules[0].backendRefs[0].name
+          value: xtmhub-front
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-route
+      - equal:
+          path: spec.rules[0].timeouts.request
+          value: 0s
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-route
+      - notExists:
+          path: spec.rules[0].filters
+        documentSelector:
+          path: metadata.name
+          value: ns-rel-route

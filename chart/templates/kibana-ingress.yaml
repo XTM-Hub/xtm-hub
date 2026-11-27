@@ -1,10 +1,15 @@
 {{- if and (.Values.kibana.enabled) (.Values.kibana.ingress.enabled) }}
+{{- if or (include "gatewayApi.ingressEnabled" $) (not .Values.gatewayApi.migrateManagement) }}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Namespace}}-{{ .Release.Name }}-ingress-kibana
   annotations:
+    {{- if and (include "gatewayApi.dnsOnGateway" $) .Values.gatewayApi.migrateManagement }}
+    # the DNS is on the gateway routes, the Ingress must let go
+    external-dns.alpha.kubernetes.io/controller: ignore
+    {{- end }}
     cert-manager.io/cluster-issuer: {{ .Values.tls_issuer }}
     external-dns.alpha.kubernetes.io/hostname: kibana.{{ .Values.xtmhub.host }}
     prometheus.io/probe: "true"
@@ -16,8 +21,8 @@ metadata:
     {{- if and (eq .Values.ingressClass "nginx") (not (hasKey .Values.kibana.ingress.annotations "nginx.ingress.kubernetes.io/whitelist-source-range")) }}
     nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.kibana.ingress.whitelistSourceRange }}
     {{- end }}
-    {{- with .Values.kibana.ingress.annotations }}
-    {{- toYaml . | nindent 4 }}
+    {{- with include "gatewayApi.customAnnotations" (dict "annotations" .Values.kibana.ingress.annotations "ignored" (and (include "gatewayApi.dnsOnGateway" $) .Values.gatewayApi.migrateManagement)) }}
+    {{- . | nindent 4 }}
     {{- end }}
 spec:
   ingressClassName: {{ .Values.ingressClass }} 
@@ -36,4 +41,5 @@ spec:
   - hosts:
     - kibana.{{ .Values.xtmhub.host }}
     secretName: xtmhub-cert-kibana
+{{- end }}
 {{- end }}

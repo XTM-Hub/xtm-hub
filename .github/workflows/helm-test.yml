@@ -1,0 +1,46 @@
+name: Helm lint and unit tests
+
+on:
+  pull_request:
+    paths:
+      - 'chart/**'
+      - '.github/workflows/helm-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helm-test-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # renovate: datasource=github-releases depName=helm/helm
+  HELM_VERSION: v4.3.0
+  # renovate: datasource=github-releases depName=helm-unittest/helm-unittest
+  HELM_UNITTEST_VERSION: v1.2.1
+
+jobs:
+  helm-test:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Install helm-unittest
+        run: |
+          set -euo pipefail
+          # The plugin is not signed: Helm 4 requires --verify=false
+          helm plugin install https://github.com/helm-unittest/helm-unittest.git \
+            --version "${HELM_UNITTEST_VERSION}" --verify=false
+          helm unittest --help > /dev/null
+
+      - name: Helm lint
+        run: helm lint chart
+
+      - name: Helm unit tests
+        run: helm unittest --strict --color=always chart

@@ -1,0 +1,17 @@
+# The gateway path fails fast on a cluster that lacks one of its CRDs.
+suite: gateway no gateway api
+templates:
+  - templates/gateway.yaml
+release:
+  name: rel
+  namespace: ns
+capabilities:
+  apiVersions:
+    - gateway.kgateway.dev/v1alpha1
+set:
+  gatewayApi.mode: kgateway
+tests:
+  - it: fails the render
+    asserts:
+      - failedTemplate:
+          errorMessage: 'gatewayApi.mode (dual/kgateway) requires the Gateway API CRDs (gateway.networking.k8s.io/v1) on the target cluster'

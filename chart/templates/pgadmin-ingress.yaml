@@ -1,8 +1,13 @@
+{{- if or (include "gatewayApi.ingressEnabled" $) (not .Values.gatewayApi.migrateManagement) }}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Release.Namespace}}-{{ .Release.Name }}-ingress-pgadmin
   annotations:
+    {{- if and (include "gatewayApi.dnsOnGateway" $) .Values.gatewayApi.migrateManagement }}
+    # the DNS is on the gateway routes, the Ingress must let go
+    external-dns.alpha.kubernetes.io/controller: ignore
+    {{- end }}
     cert-manager.io/cluster-issuer: {{ .Values.tls_issuer }}
     external-dns.alpha.kubernetes.io/hostname: pgadmin.{{ .Values.xtmhub.host }}
     external-dns.alpha.kubernetes.io/ttl: "120"
@@ -36,3 +41,4 @@ spec:
   - hosts:
     - pgadmin.{{ .Values.xtmhub.host }}
     secretName: xtmhub-cert-pgadmin
+{{- end }}

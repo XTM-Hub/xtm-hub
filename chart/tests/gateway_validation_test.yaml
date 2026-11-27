@@ -1,0 +1,75 @@
+# Settings the gateway path cannot honour are rejected instead of silently dropped.
+suite: gateway API validation
+templates:
+  - templates/gateway.yaml
+  - templates/gateway-management.yaml
+release:
+  name: rel
+  namespace: ns
+capabilities:
+  apiVersions:
+    - gateway.networking.k8s.io/v1
+    - gateway.kgateway.dev/v1alpha1
+set:
+  gatewayApi.mode: kgateway
+tests:
+  - it: rejects the www redirect in kgateway mode
+    template: templates/gateway.yaml
+    set:
+      xtmhub.wwwRedirect: true
+    asserts:
+      - failedTemplate:
+          errorMessage: 'xtmhub.wwwRedirect relies on ingress-nginx and is not supported in kgateway mode yet: unset it'
+
+  - it: keeps the www redirect on nginx in dual mode
+    template: templates/gateway.yaml
+    set:
+      gatewayApi.mode: dual
+      xtmhub.wwwRedirect: true
+    asserts:
+      - isKind:
+          of: ListenerSet
+        documentSelector:
+          path: kind
+          value: ListenerSet
+
+  - it: rejects an external authentication annotation of kibana once the management is migrated
+    template: templates/gateway.yaml
+    set:
+      gatewayApi.migrateManagement: true
+      kibana.ingress.annotations:
+        nginx.ingress.kubernetes.io/auth-url: https://auth.example.io
+    asserts:
+      - failedTemplate:
+          errorMessage: 'the annotation nginx.ingress.kubernetes.io/auth-url of kibana.ingress has no equivalent in gatewayApi mode: the authentication would be dropped at cutover'
+
+  - it: rejects a kibana denylist annotation once the management is migrated
+    template: templates/gateway.yaml
+    set:
+      gatewayApi.migrateManagement: true
+      kibana.ingress.annotations:
+        nginx.ingress.kubernetes.io/denylist-source-range: 10.1.0.0/16
+    asserts:
+      - failedTemplate:
+          errorMessage: 'the annotation nginx.ingress.kubernetes.io/denylist-source-range of kibana.ingress is not read in gatewayApi mode: the kibana whitelist would let the denied subnets through'
+
+  - it: does not look at the kibana annotations before the management migration
+    template: templates/gateway.yaml
+    set:
+      kibana.ingress.annotations:
+        nginx.ingress.kubernetes.io/auth-url: https://auth.example.io
+    asserts:
+      - isKind:
+          of: ListenerSet
+        documentSelector:
+          path: kind
+          value: ListenerSet
+
+  - it: requires a whitelist for every migrated management interface
+    template: templates/gateway-management.yaml
+    set:
+      gatewayApi.migrateManagement: true
+      minio.ingressWhitelistSourceRange: ""
+    asserts:
+      - failedTemplate:
+          errorMessage: 'gatewayApi.migrateManagement=true requires an IP whitelist for minio: set its whitelist source range'

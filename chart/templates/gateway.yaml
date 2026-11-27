@@ -1,0 +1,135 @@
+{{- if include "gatewayApi.enabled" $ }}
+{{- if not (.Capabilities.APIVersions.Has "gateway.networking.k8s.io/v1") }}
+{{- fail "gatewayApi.mode (dual/kgateway) requires the Gateway API CRDs (gateway.networking.k8s.io/v1) on the target cluster" }}
+{{- end }}
+{{- if not (.Capabilities.APIVersions.Has "gateway.kgateway.dev/v1alpha1") }}
+{{- fail "gatewayApi.mode (dual/kgateway) requires kgateway (gateway.kgateway.dev/v1alpha1) on the target cluster" }}
+{{- end }}
+{{- include "gatewayApi.validate" $ }}
+{{- $host := tpl .Values.xtmhub.host . }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-listeners
+spec:
+  parentRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: {{ .Values.gatewayApi.pool.name }}
+    namespace: {{ .Values.gatewayApi.pool.namespace }}
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: {{ $host }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: xtmhub-cert
+        {{- if .Values.gatewayApi.minTlsVersion }}
+        options:
+          kgateway.dev/min-tls-version: {{ .Values.gatewayApi.minTlsVersion | quote }}
+        {{- end }}
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+{{- if not (include "gatewayApi.ingressEnabled" $) }}
+# cert-manager does not watch ListenerSets: the certificate is requested explicitly. While the
+# Ingress exists, its cert-manager shim already creates a Certificate for this secret
+# (chart/docs/gateway-api-migration.md describes the handover of an existing Certificate).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: xtmhub-cert
+spec:
+  secretName: xtmhub-cert
+  issuerRef:
+    name: {{ .Values.tls_issuer }}
+    kind: ClusterIssuer
+  dnsNames:
+    - {{ $host }}
+---
+{{- end }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-route
+  annotations:
+    # external-dns reads the Gateway and ListenerSet parents (enableGatewayListenerSets): this route
+    # is the DNS source, unless the DNS is on nginx (gatewayApi.dnsOwner, rollback in dual mode).
+    {{- if not (include "gatewayApi.dnsOnGateway" $) }}
+    external-dns.alpha.kubernetes.io/controller: ignore
+    {{- end }}
+    external-dns.alpha.kubernetes.io/ttl: "120"
+    prometheus.io/probe: "true"
+spec:
+  hostnames:
+    - {{ $host }}
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+      name: {{ .Release.Namespace }}-{{ .Release.Name }}-listeners
+      sectionName: https
+  rules:
+    # no overall deadline (nginx only limits the idle time): kgateway would apply Envoy's 15 s default
+    - backendRefs:
+        - name: xtmhub-front
+          port: 3000
+      timeouts:
+        request: 0s
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-redirect
+  annotations:
+    # redirect routes never own DNS: the HTTPS route is the single DNS source
+    external-dns.alpha.kubernetes.io/controller: ignore
+spec:
+  hostnames:
+    - {{ $host }}
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ .Values.gatewayApi.pool.name }}
+      namespace: {{ .Values.gatewayApi.pool.namespace }}
+      sectionName: http
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: TrafficPolicy
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-policy
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ .Release.Namespace }}-{{ .Release.Name }}-route
+  # nginx parity: proxy-body-size 256m, proxy-next-upstream retries
+  buffer:
+    maxRequestSize: 256Mi
+  retry:
+    attempts: 3
+    retryOn:
+      - connect-failure
+      - reset
+      - retriable-status-codes
+    statusCodes: [502, 503, 504]
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: BackendConfigPolicy
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-backend
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: xtmhub-front
+  connectTimeout: 30s
+{{- end }}
