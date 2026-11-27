@@ -6,10 +6,9 @@ import testRender from '@/utils/test/test-render';
 import {
   type MeOrganizationsQuery,
   OrderingMode,
-  type OrganizationItemFragment,
   OrganizationOrdering,
-  type OrganizationsListQuery,
-  type OrganizationsListQueryVariables,
+  type OrganizationsAdminListQuery,
+  type OrganizationsAdminListQueryVariables,
 } from '@graphql/generated';
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -66,7 +65,7 @@ const mocks = vi.hoisted(() => {
   return {
     state,
     listOrganizations: vi.fn(),
-    useOrganizationsListQuery: vi.fn(),
+    useOrganizationsAdminListQuery: vi.fn(),
     fetchMeOrganizations: vi.fn(),
     useMeOrganizationsQuery: vi.fn(),
     createOrganization,
@@ -81,7 +80,7 @@ vi.mock('@graphql/generated', async (importOriginal) => {
     await import('@/utils/test/mock-generated-query');
   return {
     ...(await mockGeneratedQueryHooks(importOriginal, {
-      useOrganizationsListQuery: mocks.useOrganizationsListQuery,
+      useOrganizationsAdminListQuery: mocks.useOrganizationsAdminListQuery,
       useMeOrganizationsQuery: mocks.useMeOrganizationsQuery,
     })),
     // The responses are built on mutate, once the fixtures below exist.
@@ -100,13 +99,18 @@ vi.mock('@graphql/generated', async (importOriginal) => {
   };
 });
 
+type AdminOrganization =
+  OrganizationsAdminListQuery['organizations']['edges'][number]['node'];
+
 const makeOrganization = (
-  overrides: Partial<OrganizationItemFragment> = {}
-): OrganizationItemFragment => ({
+  overrides: Partial<AdminOrganization> = {}
+): AdminOrganization => ({
   id: ORGANIZATION_ID,
   name: ORGANIZATION_NAME,
   domains: [ORGANIZATION_DOMAIN],
   personal_space: false,
+  administrator_emails: [],
+  members_count: 0,
   ...overrides,
 });
 
@@ -118,9 +122,9 @@ const CREATED_ORGANIZATION = makeOrganization({
 const EDITED_ORGANIZATION = makeOrganization({ name: NEW_ORGANIZATION_NAME });
 
 const makeListResponse = (
-  organizations: OrganizationItemFragment[],
+  organizations: AdminOrganization[],
   totalCount = organizations.length
-): OrganizationsListQuery => ({
+): OrganizationsAdminListQuery => ({
   organizations: {
     totalCount,
     edges: organizations.map((node) => ({ node })),
@@ -130,12 +134,12 @@ const makeListResponse = (
 // The list runs on a real QueryClient: only its fetch is mocked.
 const useListQueryWithMockedFetch = (
   _client: unknown,
-  variables: OrganizationsListQueryVariables,
-  options?: Omit<UseQueryOptions<OrganizationsListQuery>, 'queryKey'>
+  variables: OrganizationsAdminListQueryVariables,
+  options?: Omit<UseQueryOptions<OrganizationsAdminListQuery>, 'queryKey'>
 ) =>
   useQuery({
     ...options,
-    queryKey: ['OrganizationsList', variables],
+    queryKey: ['OrganizationsAdminList', variables],
     queryFn: () => mocks.listOrganizations(variables),
   });
 
@@ -157,12 +161,15 @@ const ME_ORGANIZATIONS_RESPONSE: MeOrganizationsQuery = {
   },
 };
 
-const mockListResponses = (...responses: Promise<OrganizationsListQuery>[]) =>
+const mockListResponses = (
+  ...responses: Promise<OrganizationsAdminListQuery>[]
+) =>
   responses.forEach((response) =>
     mocks.listOrganizations.mockReturnValueOnce(response)
   );
 
-const lastQueriedVariables = (): OrganizationsListQueryVariables | undefined =>
+const lastQueriedVariables = ():
+  OrganizationsAdminListQueryVariables | undefined =>
   mocks.listOrganizations.mock.lastCall?.[0];
 
 const getRowOf = (text: string): HTMLElement => {
@@ -276,7 +283,7 @@ describe('OrganizationList', () => {
     localStorage.clear();
     mocks.state.outcome = 'success';
     mocks.state.error = new Error(SERVER_ERROR);
-    mocks.useOrganizationsListQuery.mockImplementation(
+    mocks.useOrganizationsAdminListQuery.mockImplementation(
       useListQueryWithMockedFetch
     );
     mocks.listOrganizations.mockResolvedValue(

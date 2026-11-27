@@ -2,7 +2,6 @@
 import { CreateOrganization } from '@/components/organization/CreateOrganization';
 import { DeleteOrganization } from '@/components/organization/DeleteOrganization';
 import { EditOrganization } from '@/components/organization/EditOrganization';
-import { useOrganizations } from '@/components/organization/Organization.service';
 import { useOrganizationListLocalstorage } from '@/components/organization/organization-list-localstorage';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import {
@@ -18,6 +17,7 @@ import { useDebouncedSearch } from '@/hooks/use-debounced-search';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
 import { Chip, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
@@ -25,7 +25,11 @@ import {
   OrderingMode,
   OrganizationItemFragment,
   OrganizationOrdering,
+  type OrganizationsAdminListQueryVariables,
+  useOrganizationsAdminListQuery,
 } from '@graphql/generated';
+import { adminOrganizationsKeys } from '@graphql/organization/organization.keys';
+import { keepPreviousData } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -129,14 +133,25 @@ const OrganizationList = () => {
       setPageSize,
     });
 
-  const { organizations, totalCount, isLoading, isError, isPlaceholderData } =
-    useOrganizations({
-      count: pagination.pageSize,
-      cursor,
-      orderMode,
-      orderBy,
-      searchTerm,
+  const variables: OrganizationsAdminListQueryVariables = {
+    count: pagination.pageSize,
+    cursor,
+    orderMode,
+    orderBy,
+    searchTerm,
+  };
+  // Keeps the previous result while other variables load: isPlaceholderData flags it as stale.
+  const { data, isLoading, isError, isPlaceholderData } =
+    useOrganizationsAdminListQuery(portalGraphqlClient, variables, {
+      queryKey: adminOrganizationsKeys.list(variables),
+      placeholderData: keepPreviousData,
     });
+
+  const organizations = useMemo<OrganizationItemFragment[]>(
+    () => (data?.organizations.edges ?? []).map(({ node }) => node),
+    [data]
+  );
+  const totalCount = data?.organizations.totalCount ?? 0;
 
   // Deleting the last row of the last page leaves it empty once the list is fetched again.
   useEffect(() => {
