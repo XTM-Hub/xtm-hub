@@ -1,10 +1,106 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { PlatformIdentifier } from '../../__generated__/resolvers-types';
+import { BadRequestErrorCode } from '../../utils/error/error.code';
+import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { ManifestFragmentHelper } from '../shareable-resource/manifest-fragment/manifest-fragment.helper';
+import { ManifestApp } from '../shareable-resource/manifest/manifest.app';
 import { ManageProductVersionApp } from './manage-product-version.app';
 
+const OPENAEV_VERSION = '3.261104.0';
+const OPENAEV_LTS_VERSION = '3.260309.0-lts.8';
+
 describe('manageProductVersionApp', () => {
+  describe('handleNewProductVersion for OpenAEV', () => {
+    let createGithubReleaseNewsFeedItemSpy: MockInstance<
+      typeof NewsFeedApp.createGithubReleaseNewsFeedItem
+    >;
+
+    // The migrations pre-register the OpenCTI 6.x and 7.x versions.
+    beforeEach(async () => {
+      await TestHelper.productVersion.delete({});
+      createGithubReleaseNewsFeedItemSpy = vi
+        .spyOn(NewsFeedApp, 'createGithubReleaseNewsFeedItem')
+        .mockResolvedValue(undefined);
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await TestHelper.productVersion.delete({});
+    });
+
+    it.each([
+      ['a non-LTS', OPENAEV_VERSION],
+      ['an LTS', OPENAEV_LTS_VERSION],
+    ])(
+      'should only create the news feed item, with no manifest nor registration, when the version is %s',
+      async (_description, version) => {
+        // Given
+        const requestManifestGenerationSpy = vi.spyOn(
+          ManifestApp,
+          'requestManifestGeneration'
+        );
+        const registerProductVersionSpy = vi.spyOn(
+          ManageProductVersionApp,
+          'registerProductVersion'
+        );
+
+        // When
+        await ManageProductVersionApp.handleNewProductVersion({
+          product: PlatformIdentifier.Openaev,
+          version,
+        });
+
+        // Then
+        expect(requestManifestGenerationSpy).not.toHaveBeenCalled();
+        expect(registerProductVersionSpy).not.toHaveBeenCalled();
+        expect(
+          await TestHelper.productVersion.loadAll({
+            product: PlatformIdentifier.Openaev,
+          })
+        ).toEqual([]);
+        expect(createGithubReleaseNewsFeedItemSpy).toHaveBeenCalledWith({
+          product: PlatformIdentifier.Openaev,
+          version,
+        });
+      }
+    );
+
+    it('should reject an invalid version and create nothing', async () => {
+      // Given
+      const requestManifestGenerationSpy = vi.spyOn(
+        ManifestApp,
+        'requestManifestGeneration'
+      );
+
+      // When
+      const call = ManageProductVersionApp.handleNewProductVersion({
+        product: PlatformIdentifier.Openaev,
+        version: 'not-a-version',
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.InvalidPlatformVersion
+      );
+      expect(requestManifestGenerationSpy).not.toHaveBeenCalled();
+      expect(createGithubReleaseNewsFeedItemSpy).not.toHaveBeenCalled();
+      expect(
+        await TestHelper.productVersion.loadAll({
+          product: PlatformIdentifier.Openaev,
+        })
+      ).toEqual([]);
+    });
+  });
+
   describe('registerProductVersion', () => {
     // The migrations pre-register the OpenCTI 6.x and 7.x versions.
     beforeEach(async () => {

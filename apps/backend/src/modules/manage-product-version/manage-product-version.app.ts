@@ -1,6 +1,6 @@
 import {
   ManifestType,
-  type PlatformIdentifier,
+  PlatformIdentifier,
 } from '../../__generated__/resolvers-types';
 import type ProductVersion from '../../model/kanel/public/ProductVersion';
 import { logApp } from '../../utils/app-logger.util';
@@ -35,8 +35,8 @@ export const ManageProductVersionApp = {
       });
     }
 
-    // An LTS version gets neither a manifest nor a registration: it would pollute the version filter of the libraries
-    if (!isLtsVersion(version)) {
+    // OpenAEV is news feed only; LTS would pollute the libraries' version filter
+    if (product !== PlatformIdentifier.Openaev && !isLtsVersion(version)) {
       await ManifestApp.requestManifestGeneration({
         product,
         version,

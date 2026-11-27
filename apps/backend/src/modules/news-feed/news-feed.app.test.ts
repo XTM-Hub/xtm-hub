@@ -79,6 +79,7 @@ const loadConsumeInput = async (platformId: string, token: string) => {
 
 const GITHUB_RELEASE_VERSION = '7.261201.0';
 const GITHUB_RELEASE_TITLE = `OpenCTI ${GITHUB_RELEASE_VERSION}`;
+const OPENAEV_VERSION = '3.261104.0';
 
 describe('newsFeedApp', () => {
   const createdServiceInstanceIds: ServiceInstanceId[] = [];
@@ -1768,6 +1769,7 @@ describe('newsFeedApp', () => {
     const BLOG_POST_SLUG = 'threat-report-2026';
     const BLOG_POST_URL = `${config.get<string>('blog_api.base_url')}/blog/${BLOG_POST_SLUG}`;
     const PLATFORM_ID = '9b0c7a3e-1111-4a9e-8d6f-0d4f5a7c9e10';
+    const UNMAPPED_PRODUCT_VERSION = '1.0.0';
 
     const createBlogPostItem = async ({
       slug,
@@ -1848,6 +1850,54 @@ describe('newsFeedApp', () => {
         host: 'github.com',
         url: `https://github.com/OpenCTI-Platform/opencti/releases/tag/${GITHUB_RELEASE_VERSION}`,
       });
+    });
+
+    it('should resolve the OpenAEV GitHub release tag of an OpenAEV release item, with the product of the item for telemetry', async () => {
+      // Given
+      const item = await NewsFeedDomain.createGithubReleaseNewsFeedItem({
+        platformIdentifier: PlatformIdentifier.Openaev,
+        title: `OpenAEV ${OPENAEV_VERSION}`,
+        productVersion: OPENAEV_VERSION,
+      });
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: { utm_source: 'openaev', utm_medium: 'newsfeed' },
+      });
+
+      // Then
+      expect(result).toEqual({
+        newsFeedItemId: item.id,
+        newsFeedItemType: NewsFeedItemType.GithubRelease,
+        platformIdentifier: PlatformIdentifier.Openaev,
+        host: 'github.com',
+        url: `https://github.com/OpenAEV-Platform/openaev/releases/tag/${OPENAEV_VERSION}`,
+      });
+    });
+
+    it('should not resolve a GitHub release item of a platform identifier without GitHub repository', async () => {
+      // Given
+      const item = await TestHelper.newsFeed.createItem({
+        type: NewsFeedItemType.GithubRelease,
+        platform_identifier: PlatformIdentifier.Xtmone,
+        title: `XTM One ${UNMAPPED_PRODUCT_VERSION}`,
+        key: UNMAPPED_PRODUCT_VERSION,
+      });
+      await TestHelper.newsFeed.createMetadata({
+        news_feed_item_id: item.id,
+        key: NewsFeedItemMetadataKey.ProductVersion,
+        value: UNMAPPED_PRODUCT_VERSION,
+      });
+
+      // When
+      const result = await NewsFeedApp.resolveExternalRedirect({
+        newsFeedItemId: item.id,
+        query: {},
+      });
+
+      // Then
+      expect(result).toBeUndefined();
     });
 
     it('should forward the utm parameters only, never platform_id nor any other parameter', async () => {
@@ -1940,18 +1990,22 @@ describe('newsFeedApp', () => {
     const setRequiredGithubReleaseVersions = ({
       nonLts,
       lts,
+      openaev = null,
+      openaevLts = null,
     }: {
       nonLts: string | null;
       lts: string | null;
+      openaev?: string | null;
+      openaevLts?: string | null;
     }) => {
       RequiredPlatformVersions.NewsFeedGithubReleaseSupport = {
         [PlatformIdentifier.Opencti]: nonLts,
-        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Openaev]: openaev,
         [PlatformIdentifier.Xtmone]: null,
       };
       RequiredPlatformVersions.NewsFeedGithubReleaseLtsSupport = {
         [PlatformIdentifier.Opencti]: lts,
-        [PlatformIdentifier.Openaev]: null,
+        [PlatformIdentifier.Openaev]: openaevLts,
         [PlatformIdentifier.Xtmone]: null,
       };
     };
@@ -1961,6 +2015,18 @@ describe('newsFeedApp', () => {
     ): Promise<string> => {
       const platformId = uuidv4();
       await createOpenCTIPlatformForOrganization(
+        platformId,
+        TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        { platform_version: platformVersion }
+      );
+      return platformId;
+    };
+
+    const createOpenAEVPlatformWithVersion = async (
+      platformVersion: string | null
+    ): Promise<string> => {
+      const platformId = uuidv4();
+      await createOpenAEVPlatformForOrganization(
         platformId,
         TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
         { platform_version: platformVersion }
@@ -2013,6 +2079,7 @@ describe('newsFeedApp', () => {
       expect(item).toMatchObject({
         type: NewsFeedItemType.GithubRelease,
         platform_identifier: PlatformIdentifier.Opencti,
+        key: NON_LTS_RELEASE_VERSION,
         title: `OpenCTI ${NON_LTS_RELEASE_VERSION}`,
         tags: [],
         creation_date: NOW,
@@ -2312,12 +2379,204 @@ describe('newsFeedApp', () => {
 
       // When
       await NewsFeedApp.createGithubReleaseNewsFeedItem({
-        product: PlatformIdentifier.Openaev,
+        product: PlatformIdentifier.Xtmone,
         version: NON_LTS_RELEASE_VERSION,
       });
 
       // Then
       expect(await loadGithubReleaseItems()).toEqual([]);
+    });
+
+    describe('with an openaev release', () => {
+      const OPENAEV_LTS_VERSION = '3.260309.0-lts.9';
+      const OPENAEV_LTS_REQUIRED_VERSION = '3.260309.0-lts.8';
+
+      beforeEach(() => {
+        setRequiredGithubReleaseVersions({
+          nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+          lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+          openaev: OPENAEV_VERSION,
+        });
+      });
+
+      it('should create the OpenAEV release item with its version and redirect url_path, provisioned to OpenAEV platforms only', async () => {
+        // Given
+        const openaevPlatformId =
+          await createOpenAEVPlatformWithVersion(OPENAEV_VERSION);
+        await createPlatformWithVersion(GITHUB_RELEASE_REQUIRED_VERSION);
+
+        // When
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Openaev,
+          version: OPENAEV_VERSION,
+        });
+
+        // Then
+        const items = await loadGithubReleaseItems();
+        expect(items).toHaveLength(1);
+        const [item] = items;
+        expect(item).toMatchObject({
+          type: NewsFeedItemType.GithubRelease,
+          platform_identifier: PlatformIdentifier.Openaev,
+          key: OPENAEV_VERSION,
+          title: `OpenAEV ${OPENAEV_VERSION}`,
+          tags: [],
+          is_deleted: false,
+        });
+        const metadata = await TestHelper.newsFeed.loadMetadata({
+          news_feed_item_id: item?.id,
+        });
+        expect(
+          Object.fromEntries(metadata.map(({ key, value }) => [key, value]))
+        ).toEqual({
+          [NewsFeedItemMetadataKey.UrlPath]: `redirect/news-feed/${item?.id}`,
+          [NewsFeedItemMetadataKey.ProductVersion]: OPENAEV_VERSION,
+        });
+        expect(await loadProvisionedPlatformIds(item!.id)).toEqual([
+          openaevPlatformId,
+        ]);
+      });
+
+      it('should not provision an OpenAEV platform with an OpenCTI release', async () => {
+        // Given
+        await createOpenAEVPlatformWithVersion(OPENAEV_VERSION);
+        const openctiPlatformId = await createPlatformWithVersion(
+          GITHUB_RELEASE_REQUIRED_VERSION
+        );
+
+        // When
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Opencti,
+          version: NON_LTS_RELEASE_VERSION,
+        });
+
+        // Then
+        const [item] = await loadGithubReleaseItems();
+        expect(await loadProvisionedPlatformIds(item!.id)).toEqual([
+          openctiPlatformId,
+        ]);
+      });
+
+      it('should create one item per product when the same version is released for OpenCTI and OpenAEV', async () => {
+        // Given
+        const releasedProducts = [
+          PlatformIdentifier.Opencti,
+          PlatformIdentifier.Openaev,
+        ];
+
+        // When
+        for (const product of releasedProducts) {
+          await NewsFeedApp.createGithubReleaseNewsFeedItem({
+            product,
+            version: OPENAEV_VERSION,
+          });
+        }
+
+        // Then
+        const items = await loadGithubReleaseItems();
+        expect(items).toHaveLength(2);
+        expect(
+          items.map(({ platform_identifier, key, title }) => ({
+            platform_identifier,
+            key,
+            title,
+          }))
+        ).toEqual(
+          expect.arrayContaining([
+            {
+              platform_identifier: PlatformIdentifier.Opencti,
+              key: OPENAEV_VERSION,
+              title: `OpenCTI ${OPENAEV_VERSION}`,
+            },
+            {
+              platform_identifier: PlatformIdentifier.Openaev,
+              key: OPENAEV_VERSION,
+              title: `OpenAEV ${OPENAEV_VERSION}`,
+            },
+          ])
+        );
+      });
+
+      it('should neither duplicate the OpenAEV item nor restore it when the version is sent again', async () => {
+        // Given
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Openaev,
+          version: OPENAEV_VERSION,
+        });
+        const [deletedItem] = await loadGithubReleaseItems();
+        await NewsFeedApp.deleteNewsFeedItem({
+          newsFeedItemId: deletedItem!.id,
+        });
+
+        // When
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Openaev,
+          version: OPENAEV_VERSION,
+        });
+
+        // Then
+        const items = await loadGithubReleaseItems();
+        expect(items).toHaveLength(1);
+        expect(items[0]).toMatchObject({
+          id: deletedItem?.id,
+          is_deleted: true,
+        });
+      });
+
+      it('should provision only the OpenAEV platforms of the LTS track that pass the LTS gate when an openaev lts version is released', async () => {
+        // Given
+        setRequiredGithubReleaseVersions({
+          nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+          lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+          openaev: OPENAEV_VERSION,
+          openaevLts: OPENAEV_LTS_REQUIRED_VERSION,
+        });
+        const ltsPlatformId = await createOpenAEVPlatformWithVersion(
+          OPENAEV_LTS_REQUIRED_VERSION
+        );
+        await createOpenAEVPlatformWithVersion('3.260309.0-lts.7');
+        await createOpenAEVPlatformWithVersion(OPENAEV_VERSION);
+
+        // When
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Openaev,
+          version: OPENAEV_LTS_VERSION,
+        });
+
+        // Then
+        const [item] = await loadGithubReleaseItems();
+        expect(item).toMatchObject({
+          platform_identifier: PlatformIdentifier.Openaev,
+          key: OPENAEV_LTS_VERSION,
+        });
+        expect(await loadProvisionedPlatformIds(item!.id)).toEqual([
+          ltsPlatformId,
+        ]);
+      });
+
+      it('should create the item but provision no platform when the OpenAEV required version is null', async () => {
+        // Given
+        setRequiredGithubReleaseVersions({
+          nonLts: GITHUB_RELEASE_REQUIRED_VERSION,
+          lts: GITHUB_RELEASE_LTS_REQUIRED_VERSION,
+          openaev: null,
+        });
+        await createOpenAEVPlatformWithVersion('99.0.0');
+
+        // When
+        await NewsFeedApp.createGithubReleaseNewsFeedItem({
+          product: PlatformIdentifier.Openaev,
+          version: OPENAEV_VERSION,
+        });
+
+        // Then
+        const [item] = await loadGithubReleaseItems();
+        expect(item).toMatchObject({
+          platform_identifier: PlatformIdentifier.Openaev,
+          key: OPENAEV_VERSION,
+        });
+        expect(await loadProvisionedPlatformIds(item!.id)).toEqual([]);
+      });
     });
   });
 
