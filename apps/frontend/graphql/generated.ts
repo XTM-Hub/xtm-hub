@@ -4445,6 +4445,16 @@ export type UserOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type UserOrganizationsQuery = { __typename?: 'Query', userOrganizations: Array<{ __typename?: 'Organization', id: string, name: string, personal_space: boolean }> };
 
+export type OrganizationMembersQueryVariables = Exact<{
+  organizationId: Scalars['OrganizationId']['input'];
+  first: Scalars['Int']['input'];
+  after: InputMaybe<Scalars['ID']['input']>;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type OrganizationMembersQuery = { __typename?: 'Query', organizationMembers: { __typename?: 'OrganizationMemberConnection', totalCount: number, edges: Array<{ __typename?: 'OrganizationMemberEdge', node: { __typename?: 'OrganizationMember', id: any, email: string, first_name: string | null, last_name: string | null, capabilities: Array<OrganizationCapability> } }> } };
+
 export type RegisteredSaasPlatformDataQueryVariables = Exact<{
   input: RegisteredSaasPlatformDataInput;
 }>;
@@ -9014,6 +9024,73 @@ export const useInfiniteUserOrganizationsQuery = <
 useInfiniteUserOrganizationsQuery.getKey = (variables?: UserOrganizationsQueryVariables) => variables === undefined ? ['UserOrganizations.infinite'] : ['UserOrganizations.infinite', variables];
 useInfiniteUserOrganizationsQuery.getRootKey = () => ['UserOrganizations.infinite'] as const;
 useUserOrganizationsQuery.fetcher = (client: GraphQLClient, variables?: UserOrganizationsQueryVariables, headers?: RequestInit['headers']) => fetcher<UserOrganizationsQuery, UserOrganizationsQueryVariables>(client, UserOrganizationsDocument, variables, headers);
+
+export const OrganizationMembersDocument = `
+    query OrganizationMembers($organizationId: OrganizationId!, $first: Int!, $after: ID, $searchTerm: String) {
+  organizationMembers(
+    organizationId: $organizationId
+    first: $first
+    after: $after
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        id
+        email
+        first_name
+        last_name
+        capabilities
+      }
+    }
+  }
+}
+    `;
+
+export const useOrganizationMembersQuery = <
+      TData = OrganizationMembersQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationMembersQueryVariables,
+      options?: Omit<UseQueryOptions<OrganizationMembersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<OrganizationMembersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<OrganizationMembersQuery, TError, TData>(
+      {
+    queryKey: ['OrganizationMembers', variables],
+    queryFn: fetcher<OrganizationMembersQuery, OrganizationMembersQueryVariables>(client, OrganizationMembersDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useOrganizationMembersQuery.getKey = (variables: OrganizationMembersQueryVariables) => ['OrganizationMembers', variables];
+useOrganizationMembersQuery.getRootKey = () => ['OrganizationMembers'] as const;
+export const useInfiniteOrganizationMembersQuery = <
+      TData = InfiniteData<OrganizationMembersQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationMembersQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<OrganizationMembersQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<OrganizationMembersQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<OrganizationMembersQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['OrganizationMembers.infinite', variables],
+      queryFn: (metaData) => fetcher<OrganizationMembersQuery, OrganizationMembersQueryVariables>(client, OrganizationMembersDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteOrganizationMembersQuery.getKey = (variables: OrganizationMembersQueryVariables) => ['OrganizationMembers.infinite', variables];
+useInfiniteOrganizationMembersQuery.getRootKey = () => ['OrganizationMembers.infinite'] as const;
+useOrganizationMembersQuery.fetcher = (client: GraphQLClient, variables: OrganizationMembersQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationMembersQuery, OrganizationMembersQueryVariables>(client, OrganizationMembersDocument, variables, headers);
 
 export const RegisteredSaasPlatformDataDocument = `
     query RegisteredSaasPlatformData($input: RegisteredSaasPlatformDataInput!) {

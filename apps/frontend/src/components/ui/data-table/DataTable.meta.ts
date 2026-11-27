@@ -37,6 +37,8 @@ export const DataTableMeta: ComponentMeta = {
       '() => void (optional) - called after table.reset() when the Reset item of the table menu is picked.',
     selectionOptions:
       '{ selectionState?: { state: SelectionState; onSelectionChange: Dispatch<SetStateAction<SelectionState>> }; selectionHeader?: { actions?: ({ selectionState }) => ReactNode } } (optional) - adds the pinned checkbox column and the selection bar; without selectionState the table keeps its own.',
+    pageSizeOptions:
+      'number[] (optional, default [50, 100, 200, 300, 500]) - the sizes listed in the Rows per page sub-menu of the table menu; the current page size is left as it is.',
     previousPageLabel:
       "string (optional, default 'Go to previous page') - the accessible name of the previous button; pass a translation.",
     nextPageLabel:

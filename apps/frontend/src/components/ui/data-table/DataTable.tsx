@@ -117,6 +117,7 @@ export interface DataTableProps<
   isLoading?: boolean;
   onResetTable?: () => void;
   selectionOptions?: DataTableSelectionOptions;
+  pageSizeOptions?: number[];
 }
 
 const defaultLabels: Required<DataTableLabels> = {
@@ -141,6 +142,7 @@ interface DataTableContextValue<TData> {
   labels: Required<DataTableLabels>;
   onResetTable?: () => void;
   selectionHandlers: DataTableSelectionHandlers<TData>;
+  pageSizeOptions: number[];
 }
 
 // The provider fixes TData per table; a context cannot be generic.
@@ -201,7 +203,8 @@ const createSelectColumn = <TData,>(): ColumnDef<TData, unknown> => ({
 });
 
 const DataTableMenu = () => {
-  const { table, labels, onResetTable } = useDataTableContext();
+  const { table, labels, onResetTable, pageSizeOptions } =
+    useDataTableContext();
 
   const onClickResetTable = useCallback(() => {
     table.reset();
@@ -257,7 +260,7 @@ const DataTableMenu = () => {
             {labels.rowsPerPageLabel}
           </MenuSubTrigger>
           <MenuSubContent className="layer-1">
-            {PAGE_SIZES.map((size) => (
+            {pageSizeOptions.map((size) => (
               <MenuItem
                 {...analyticsId('list_page_size_select')}
                 key={size}
@@ -633,6 +636,7 @@ const DataTable = <TData extends { id: string }, TValue>({
   isLoading = false,
   onResetTable,
   selectionOptions,
+  pageSizeOptions = PAGE_SIZES,
   previousPageLabel = defaultLabels.previousPageLabel,
   nextPageLabel = defaultLabels.nextPageLabel,
   manageColumnsLabel = defaultLabels.manageColumnsLabel,
@@ -743,6 +747,7 @@ const DataTable = <TData extends { id: string }, TValue>({
     },
     onResetTable,
     selectionHandlers,
+    pageSizeOptions,
   };
 
   const columnOrderState = table.getState().columnOrder;

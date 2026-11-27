@@ -56,6 +56,9 @@ const LOADING_ROW_COUNT = 30;
 const ROW_COUNT = 120;
 const PAGE_SIZE = 50;
 const NEW_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE_OPTIONS = [50, 100, 200, 300, 500];
+const RESTRICTED_PAGE_SIZE_OPTIONS = [50, 100];
+const PAGE_SIZE_ITEM_TEXT = /^\d+$/;
 const DISABLED_ROW_CLASS = 'opacity-50';
 const COLLAPSED_BAR_CLASS = 'h-0';
 const SEARCH_TEST_ID = 'search';
@@ -610,6 +613,30 @@ describe('DataTable', () => {
         })
       ).toEqual({ pageIndex: 0, pageSize: NEW_PAGE_SIZE });
     });
+
+    it.each([
+      [undefined, DEFAULT_PAGE_SIZE_OPTIONS],
+      [RESTRICTED_PAGE_SIZE_OPTIONS, RESTRICTED_PAGE_SIZE_OPTIONS],
+    ])(
+      'should list exactly the sizes of the Rows per page sub-menu when pageSizeOptions is %j',
+      async (pageSizeOptions, expectedSizes) => {
+        // Given
+        const { user } = renderTable({ ...paginated(), pageSizeOptions });
+        await openTableMenu(user);
+
+        // When
+        await pickMenuItem(user, DEFAULT_LABELS.rowsPerPage);
+
+        // Then
+        await screen.findByRole('menuitem', { name: String(PAGE_SIZE) });
+        expect(
+          screen
+            .getAllByRole('menuitem')
+            .map((item) => item.textContent)
+            .filter((text) => PAGE_SIZE_ITEM_TEXT.test(text ?? ''))
+        ).toEqual(expectedSizes.map(String));
+      }
+    );
   });
 
   describe('column menu', () => {

@@ -2424,6 +2424,8 @@
     "InvitationStatus": "招待ステータス",
     "LastLogin": "姓",
     "LastName": "姓",
+    "Member": "メンバー",
+    "Members": "メンバー",
     "NoUsers": "ユーザーが見つかりません",
     "Organizations": "団体名",
     "ResendInvite": "招待を再送信",
