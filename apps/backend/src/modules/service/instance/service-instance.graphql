@@ -95,11 +95,9 @@ type Mutation {
     document: Upload
     isLogo: Boolean!
   ): ServiceInstance
-    @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_SUBSCRIPTION])
   updatePlatformServiceMetadata(
     input: UpdatePlatformServiceMetadataInput!
   ): RegisteredPlatform
-    @auth(orgaCapa: [ADMINISTRATE_ORGANIZATION, MANAGE_PLATFORM_REGISTRATION])
 }
 
 type Query {
@@ -111,12 +109,11 @@ type Query {
     searchTerm: String
     filters: [ServiceInstanceFilter!]
     includeInaccessible: Boolean
-  ): ServiceConnection! @auth
+  ): ServiceConnection!
   serviceInstanceLinksByTags(
     tags: [ServiceInstanceTag!]!
   ): [SeoServiceInstance!]!
   serviceInstanceById(service_instance_id: ServiceInstanceId!): ServiceInstance
-    @auth
   seoServiceInstances: [SeoServiceInstance!]!
   seoServiceInstance(slug: String!): SeoServiceInstance!
 }

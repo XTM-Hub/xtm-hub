@@ -1,6 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  // eslint-disable-next-line no-restricted-imports
+  contextBypassUser,
+  contextRegistererUserSecondOrga,
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
   SERVICES,
@@ -337,7 +340,7 @@ describe('mutation.addServicePicture', () => {
         document: {} as unknown as MutationAddServicePictureArgs['document'],
         isLogo: true,
       },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
@@ -367,14 +370,14 @@ describe('mutation.updatePlatformServiceMetadata', () => {
       .updatePlatformServiceMetadata!(
       {},
       { input },
-      contextSimpleUserFiligran2,
+      contextRegistererUserSecondOrga,
       GRAPHQL_RESOLVE_INFO
     );
 
     expect(
       ServiceInstanceApp.updatePlatformServiceMetadata
     ).toHaveBeenCalledWith(
-      contextSimpleUserFiligran2.user,
+      contextRegistererUserSecondOrga.user,
       SERVICES.INSTANCES.EPIC.ID,
       input
     );
@@ -395,7 +398,7 @@ describe('mutation.updatePlatformServiceMetadata', () => {
           serviceInstanceId: SERVICES.INSTANCES.EPIC.ID,
         } as unknown as MutationUpdatePlatformServiceMetadataArgs['input'],
       },
-      contextSimpleUserFiligran2,
+      contextRegistererUserSecondOrga,
       GRAPHQL_RESOLVE_INFO
     );
 

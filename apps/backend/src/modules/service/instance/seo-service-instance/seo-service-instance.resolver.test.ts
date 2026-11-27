@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  // eslint-disable-next-line no-restricted-imports
+  contextBypassUser,
   contextSimpleUserFiligran2,
   GRAPHQL_RESOLVE_INFO,
   SERVICES,
@@ -115,7 +117,7 @@ describe('seo-service-instance.resolver', () => {
           meta_description: 'meta description',
         },
       },
-      contextSimpleUserFiligran2,
+      contextBypassUser,
       GRAPHQL_RESOLVE_INFO
     );
 
