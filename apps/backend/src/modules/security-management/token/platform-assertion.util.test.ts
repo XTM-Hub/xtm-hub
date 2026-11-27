@@ -589,8 +589,10 @@ describe('verifyPlatformAssertion on assertions signed by the products', () => {
     expect(result).toMatchObject({ valid: true, claims: { htu } });
   });
 
-  // OpenAEV and XTM One sign with `typ: JWT`, not the protocol's type: their only mismatch, so these samples are
-  // refused. Once the products send the protocol's type, regenerate the samples and expect them to be accepted.
+  // OpenAEV and XTM One still put the literal `typ: "JWT"` in the header instead of `"xtm-hub-platform+jwt"`. That
+  // is their only mismatch: signature, kid, aud, iss, lifetime and jti all pass, and an OpenAEV tenant assertion is
+  // an ordinary assertion with an extra tenant_id claim. Once the products send the protocol's typ, regenerate the
+  // samples and expect them to be accepted.
   it.each([
     {
       name: 'an OpenAEV assertion for the whole instance',
@@ -608,7 +610,7 @@ describe('verifyPlatformAssertion on assertions signed by the products', () => {
       sample: XTM_ONE_SAMPLE,
     },
   ])(
-    'should refuse $name, signed with typ JWT',
+    'should refuse $name: signed with typ "JWT" instead of "xtm-hub-platform+jwt"',
     async ({ assertion, sample }) => {
       // Given
       const { platformId, publicJwk: jwk, now } = sample;
