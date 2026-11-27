@@ -2,6 +2,7 @@
 import { CreateOrganization } from '@/components/organization/CreateOrganization';
 import { DeleteOrganization } from '@/components/organization/DeleteOrganization';
 import { EditOrganization } from '@/components/organization/EditOrganization';
+import { OrganizationAdministrators } from '@/components/organization/OrganizationAdministrators';
 import { useOrganizationListLocalstorage } from '@/components/organization/organization-list-localstorage';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import {
@@ -80,6 +81,17 @@ const OrganizationList = () => {
             </div>
           );
         },
+      },
+      {
+        id: 'administrators',
+        header: t('OrganizationForm.Administrators'),
+        size: 300,
+        enableSorting: false,
+        cell: ({ row }) => (
+          <OrganizationAdministrators
+            emails={row.original.administrator_emails}
+          />
+        ),
       },
       {
         id: 'members',

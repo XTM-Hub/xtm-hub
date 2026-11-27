@@ -830,6 +830,10 @@
     "SearchOrganizationWithEmail": "Rechercher une organisation par email..."
   },
   "OrganizationForm": {
+    "Administrators": "Administrateurs",
+    "AdministratorsPopoverTitle": "Administrateurs ({count})",
+    "CopyAdministratorEmail": "Copier {email}",
+    "CopyAll": "Tout copier",
     "CreateOrganization": "Créer une organisation",
     "DeleteOrganization": "Supprimer l'organisation",
     "Domains": "Domaines",
@@ -843,6 +847,8 @@
     },
     "Members": "Membres",
     "Name": "Nom",
+    "NoAdministrator": "Aucun administrateur",
+    "OtherAdministrators": "+{count} {count, plural, one {autre administrateur} other {autres administrateurs}}",
     "SeeMembers": "Voir les membres",
     "SureDeleteOrganization": "Êtes-vous sûr de vouloir supprimer l'organisation {organizationName} ? Cette action ne pourra pas être annulée.",
     "Total": "Total"

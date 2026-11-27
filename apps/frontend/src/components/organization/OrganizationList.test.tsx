@@ -26,6 +26,8 @@ const SERVER_ERROR = 'ORGANIZATION_NOT_FOUND';
 const PERSONAL_ORGANIZATION_ID = 'organization-personal';
 const ORGANIZATIONS_PATH = '/app/admin/organizations';
 const MEMBERS_COUNT = 12;
+const FIRST_ADMINISTRATOR_EMAIL = 'alice@filigran.io';
+const SECOND_ADMINISTRATOR_EMAIL = 'bob@filigran.io';
 const DEFAULT_PAGE_SIZE = 50;
 const STORED_PAGE_SIZE = 10;
 const SEVERAL_PAGES_COUNT = DEFAULT_PAGE_SIZE * 2;
@@ -356,6 +358,28 @@ describe('OrganizationList', () => {
         within(getRowOf(ORGANIZATION_NAME)).getByRole('cell', {
           name: String(MEMBERS_COUNT),
         })
+      ).toBeInTheDocument();
+    });
+
+    it('should display the first administrator email in the organization row', async () => {
+      // Given
+      mocks.listOrganizations.mockResolvedValue(
+        makeListResponse([
+          makeOrganization({
+            administrator_emails: [
+              FIRST_ADMINISTRATOR_EMAIL,
+              SECOND_ADMINISTRATOR_EMAIL,
+            ],
+          }),
+        ])
+      );
+
+      // When
+      await renderList();
+
+      // Then
+      expect(
+        within(getRowOf(ORGANIZATION_NAME)).getByText(FIRST_ADMINISTRATOR_EMAIL)
       ).toBeInTheDocument();
     });
 

@@ -830,6 +830,10 @@
     "SearchOrganizationWithEmail": "Search organization with email..."
   },
   "OrganizationForm": {
+    "Administrators": "Administrators",
+    "AdministratorsPopoverTitle": "Administrators ({count})",
+    "CopyAdministratorEmail": "Copy {email}",
+    "CopyAll": "Copy all",
     "CreateOrganization": "Create organization",
     "DeleteOrganization": "Delete organization",
     "Domains": "Domains",
@@ -843,6 +847,8 @@
     },
     "Members": "Members",
     "Name": "Name",
+    "NoAdministrator": "No administrator",
+    "OtherAdministrators": "+{count} more {count, plural, one {administrator} other {administrators}}",
     "SeeMembers": "See members",
     "SureDeleteOrganization": "Are you sure you want to delete this organization {organizationName}? This action can not be undone.",
     "Total": "Total"
