@@ -15,10 +15,7 @@ import { PROTECTED_USER_UUIDS } from '../../../../portal.const';
 import { dispatch } from '../../../../pub';
 import { isUserAdminPlatform } from '../../../../security/access';
 import { securityGuard } from '../../../../security/guard';
-import {
-  destroyUserSessions,
-  updateUserSession,
-} from '../../../../session-store-manager';
+import { destroyUserSessions } from '../../../../session-store-manager';
 import { auth0Client } from '../../../../thirdparty/auth0/client';
 import { logApp } from '../../../../utils/app-logger.util';
 import { toError } from '../../../../utils/error/error-guard.util';
@@ -173,7 +170,7 @@ export const UserAdminApp = {
         UserHelper.removePendingAndDispatch(user, orgCapa.organization_id)
       )
     );
-    updateUserSession(user);
+    await UserHelper.refreshUserSessions(userId);
 
     const userMapped = UserHelper.mapUserToGraphqlUser(user);
 
@@ -239,11 +236,13 @@ export const UserAdminApp = {
       throw new Error(ErrorCode.PendingUserNotFound);
     }
 
-    return UserHelper.acceptPendingUserWithCapabilities({
+    const user = await UserHelper.acceptPendingUserWithCapabilities({
       user_id: userId,
       organization_id: organizationId,
       orgCapabilities: input.capabilities,
     });
+    await UserHelper.refreshUserSessions(userId);
+    return user;
   },
 
   bulkAcceptPendingUserInOrganization: async (
@@ -278,6 +277,7 @@ export const UserAdminApp = {
             organization_id: organizationId,
             orgCapabilities: [],
           });
+          await UserHelper.refreshUserSessions(userId);
         } catch (error) {
           logApp.error('Error while accepting user in organization', {
             error,

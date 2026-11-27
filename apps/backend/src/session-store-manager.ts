@@ -1,6 +1,6 @@
 import { MemoryStore, SessionData } from 'express-session';
 import portalConfig from './config';
-import { UserLoadUserBy, UserWithOrganizationsAndRole } from './model/user';
+import { UserLoadUserBy } from './model/user';
 import { PostgreSQLSessionStore } from './stores/postgresql-session-store';
 import { logApp } from './utils/app-logger.util';
 
@@ -113,10 +113,10 @@ export const destroyUserSessions = (userId: string): Promise<void> => {
 /**
  * Update user session data across all active sessions
  * This function works with both PostgreSQL and Memory stores
+ * The user must come from UserDomain.loadUserBy: the @auth directive reads
+ * selected_org_capabilities and capabilities from the session.
  */
-export const updateUserSession = (
-  user: UserWithOrganizationsAndRole
-): Promise<void> => {
+export const updateUserSession = (user: UserLoadUserBy): Promise<void> => {
   const storeInstance = getSessionStoreInstance();
 
   return new Promise((resolve) => {
@@ -159,7 +159,7 @@ export const updateUserSession = (
         const sessionToUpdate = typedSessions[sessionId] as SessionData & {
           user?: UserLoadUserBy;
         };
-        sessionToUpdate.user = user as UserLoadUserBy;
+        sessionToUpdate.user = user;
 
         storeInstance.set(
           sessionId,

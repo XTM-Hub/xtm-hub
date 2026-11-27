@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { getDbTestConnection } from '../tests/config-test';
 import { UserId } from './model/kanel/public/User';
-import { UserWithOrganizationsAndRole } from './model/user';
+import { UserLoadUserBy } from './model/user';
 import {
   destroyUserSessions,
   getSessionStoreInstance,
@@ -12,7 +12,7 @@ import {
 } from './session-store-manager';
 
 type SessionDataWithUser = SessionData & {
-  user?: UserWithOrganizationsAndRole;
+  user?: UserLoadUserBy;
 };
 
 describe('sessionStoreManager - Configuration-based Store Selection', () => {
@@ -63,14 +63,14 @@ describe('sessionStoreManager - Configuration-based Store Selection', () => {
 
   describe('updateUserSession functionality', () => {
     it('should handle updateUserSession without errors', async () => {
-      const testUser: UserWithOrganizationsAndRole = {
+      const testUser: UserLoadUserBy = {
         id: 'test-user-' + uuidv4(),
         email: 'test@example.com',
         first_name: 'Test',
         last_name: 'User',
         organizations: [],
         role: { id: 'role-id', name: 'USER' },
-      } as unknown as UserWithOrganizationsAndRole;
+      } as unknown as UserLoadUserBy;
 
       // Should not throw any errors
       await expect(updateUserSession(testUser)).resolves.toBeUndefined();
@@ -199,14 +199,14 @@ describe('sessionStoreManager - Configuration-based Store Selection', () => {
         });
 
         // Update user
-        const updatedUser: UserWithOrganizationsAndRole = {
+        const updatedUser: UserLoadUserBy = {
           id: userId,
           email: 'updated@example.com',
           first_name: 'Updated Name',
           last_name: 'User',
           organizations: [],
           role: { id: 'role-id', name: 'USER' },
-        } as unknown as UserWithOrganizationsAndRole;
+        } as unknown as UserLoadUserBy;
 
         await updateUserSession(updatedUser);
 
@@ -248,13 +248,13 @@ describe('sessionStoreManager - Configuration-based Store Selection', () => {
           });
         });
 
-        const updatedUser: UserWithOrganizationsAndRole = {
+        const updatedUser: UserLoadUserBy = {
           id: userId,
           email: 'memory@example.com',
           first_name: 'Memory Updated',
           organizations: [],
           role: { id: 'role-id', name: 'USER' },
-        } as unknown as UserWithOrganizationsAndRole;
+        } as unknown as UserLoadUserBy;
 
         await updateUserSession(updatedUser);
 
@@ -388,21 +388,19 @@ describe('sessionStoreManager - Configuration-based Store Selection', () => {
       const invalidUser = null;
 
       expect(() => {
-        updateUserSession(
-          invalidUser as unknown as UserWithOrganizationsAndRole
-        );
+        updateUserSession(invalidUser as unknown as UserLoadUserBy);
       }).not.toThrow();
     });
 
     it('should handle session store errors without crashing the application', () => {
-      const testUser: UserWithOrganizationsAndRole = {
+      const testUser: UserLoadUserBy = {
         id: 'error-user-' + uuidv4(),
         email: 'error@example.com',
         first_name: 'Error',
         last_name: 'Test',
         organizations: [],
         role: { id: 'role-id', name: 'USER' },
-      } as unknown as UserWithOrganizationsAndRole;
+      } as unknown as UserLoadUserBy;
 
       // This should not throw even if there are internal errors
       expect(() => {

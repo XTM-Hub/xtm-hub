@@ -316,7 +316,7 @@ export const UserOrganizationApp = {
       organizationId
     );
 
-    await withTransaction(async () => {
+    const accepted = await withTransaction(async () => {
       const pendingUser =
         await UserOrganizationPendingDomain.lockUserOrganizationPending(
           userId,
@@ -324,7 +324,7 @@ export const UserOrganizationApp = {
         );
 
       if (!pendingUser) {
-        return;
+        return false;
       }
 
       await UserHelper.acceptPendingUserWithCapabilities({
@@ -332,7 +332,11 @@ export const UserOrganizationApp = {
         organization_id: organizationId,
         orgCapabilities: [],
       });
+      return true;
     });
+    if (accepted) {
+      await UserHelper.refreshUserSessions(userId);
+    }
 
     const user = await UserDomain.loadUserBy({
       'User.id': userId,
