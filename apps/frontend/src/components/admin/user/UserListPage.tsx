@@ -37,8 +37,7 @@ const UserListPage = ({ organization }: UserListPageProps) => {
     enabled: !isAdminPath,
   });
 
-  // The page waits for the pending users count, as it did when the Relay
-  // query suspended it.
+  // The page waits for the pending users count.
   if (!isAdminPath && !data) {
     return <Loader />;
   }

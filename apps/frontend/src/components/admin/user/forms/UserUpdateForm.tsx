@@ -54,7 +54,7 @@ export const UserUpdateForm = ({ user, callback }: UserUpdateFormProps) => {
   const { mutate: updateUserMutation } = useUserCapabilitiesEditMutation<Error>(
     portalGraphqlClient,
     {
-      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // On the hook, not on mutate: the outcome is handled even if
       // the form is gone by then.
       onSuccess: () => {
         refreshUsersList();

@@ -58,7 +58,7 @@ const ManageCompetitor = ({
           displayedListKey,
           prependToQueryCache('competitors', { node: data.createCompetitor })
         );
-        // Like Relay, only the displayed page shows the new row on top; the other pages and orders refetch.
+        // Only the displayed page shows the new row on top; the other pages and orders refetch.
         await queryClient.invalidateQueries({
           queryKey: competitorListKeys.all(),
           predicate: (query) => query.queryHash !== hashKey(displayedListKey),

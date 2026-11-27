@@ -243,7 +243,7 @@ export const UserServiceForm = ({
     {
       // A search keeps the previous data, so the field never goes back to empty.
       placeholderData: keepPreviousData,
-      // Like Relay, a failed load reaches the error page; a failed background
+      // A failed first load reaches the error page; a failed background
       // refetch keeps the options shown.
       throwOnError: (_error, query) => query.state.data === undefined,
     }

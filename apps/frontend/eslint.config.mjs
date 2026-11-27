@@ -6,7 +6,6 @@ import unicorn from 'eslint-plugin-unicorn';
 const restrictedGlobalTestMocks = new Set([
   'next-intl',
   'next/navigation',
-  '@/components/error-frontend-log.graphql',
   '@/hooks/use-registered-platforms',
   '@/hooks/use-is-feature-enabled',
 ]);

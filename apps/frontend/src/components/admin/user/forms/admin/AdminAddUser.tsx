@@ -20,7 +20,7 @@ export const AdminAddUser = () => {
   const { mutate: createUser } = useUserAdminResendInviteMutation<Error>(
     portalGraphqlClient,
     {
-      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // On the hook, not on mutate: the outcome is handled even if
       // the form is gone by then.
       onSuccess: (_data, { input }) => {
         refreshUsersList();

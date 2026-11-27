@@ -24,6 +24,7 @@ const UserEventSubscription = () => {
   const { mutate: commitLogout } = useLogoutMutation(portalGraphqlClient, {
     onSuccess() {
       refreshAnalyticsUser().then(() => {
+        // A hard navigation drops the deleted account's whole react-query cache, which router.push would keep.
         window.location.href = '/?error=account-deleted';
       });
     },

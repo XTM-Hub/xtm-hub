@@ -137,13 +137,13 @@ const UserList = ({ organization }: UserListProps) => {
       // A page, sort, search or filter change keeps the current rows until
       // its results arrive.
       placeholderData: keepPreviousData,
-      // Like Relay, a failed load reaches the error page; a failed background
+      // A failed first load reaches the error page; a failed background
       // refetch keeps the rows shown.
       throwOnError: (_error, query) => query.state.data === undefined,
-      // Always stale, as the Relay store-and-network policy: showing the list
-      // again (the tabs unmount it), or a search, filter, sort, page size or
-      // page already in the cache, reloads it. Coming back to the browser tab
-      // does not, as with Relay.
+      // Always stale: showing the list again (the tabs unmount it), or a
+      // search, filter, sort, page size or page already in the cache, shows
+      // the cached rows and reloads them. Coming back to the browser tab does
+      // not.
       staleTime: 0,
       refetchOnWindowFocus: false,
     }
@@ -201,7 +201,7 @@ const UserList = ({ organization }: UserListProps) => {
     [adminResendInvite, isAdminPath, me?.selected_organization_id, resendInvite]
   );
 
-  // A new user reloads the list on screen, in place of the Relay @appendNode.
+  // A new user reloads the list on screen.
   // Batched, as a bulk accept of pending users adds them one event at a time.
   const refreshUsersAfterEvent = useBatchedInvalidation({
     queryKey: usersListKeys.list(variables),

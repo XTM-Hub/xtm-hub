@@ -34,7 +34,7 @@ export const RegisterStateMissingCapability = ({
       },
     },
     {
-      // Like Relay, a failed load reaches the error page; a failed background
+      // A failed first load reaches the error page; a failed background
       // refetch of a list already loaded keeps it shown.
       throwOnError: (_error, query) => query.state.data === undefined,
     }

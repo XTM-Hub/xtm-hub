@@ -36,7 +36,6 @@
       "Read(./apps/backend/config/local.json)",
       "Edit(./apps/backend/src/__generated__/**)",
       "Edit(./apps/backend/src/model/kanel/**)",
-      "Edit(./apps/frontend/__generated__/**)",
       "Edit(./apps/frontend/schema.graphql)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",

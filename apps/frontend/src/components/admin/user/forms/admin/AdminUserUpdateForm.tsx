@@ -94,7 +94,7 @@ export const AdminUserUpdateForm = ({
   const { mutate: updateUserMutation } = useUserAdminEditMutation<Error>(
     portalGraphqlClient,
     {
-      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // On the hook, not on mutate: the outcome is handled even if
       // the form is gone by then.
       onSuccess: () => {
         refreshUsersList();
@@ -115,7 +115,7 @@ export const AdminUserUpdateForm = ({
     }
   );
 
-  // The API handles a null field like a field left out, as Relay sent them.
+  // The API handles a null field like a field left out, so an unset field is sent as null.
   const updateUser = ({
     password,
     ...values
