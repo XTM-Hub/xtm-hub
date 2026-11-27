@@ -49,8 +49,11 @@ export default class AdminRegisteredPlatformsPage {
   }
 
   getUnregisterSuccess(platformTitle: string) {
+    // Exact text on purpose: while the toast is announced, a status region also holds this
+    // message after "Notification", and a substring match would resolve to both elements.
     return this.page.getByText(
-      `The platform "${platformTitle}" has been unregistered`
+      `The platform "${platformTitle}" has been unregistered`,
+      { exact: true }
     );
   }
 }
