@@ -1,8 +1,8 @@
 import { CallerOf } from './guard.types';
 
-// Where a guard reads the id it checks. An anonymous caller never reaches a source: the guard denies it first
-export type Source<Args, Id> = (
-  caller: CallerOf<'user'>,
+// Where a guard reads the id it checks. By default an anonymous caller never reaches a source: the guard denies it first
+export type Source<Args, Id, Caller = CallerOf<'user'>> = (
+  caller: Caller,
   args: Args
 ) => Id | undefined;
 
@@ -12,8 +12,9 @@ export type AsyncSource<Args, Id> = (
   args: Args
 ) => Promise<Id | undefined>;
 
+// Reads no caller, so it fits a Source whatever its caller
 export const fromArg =
-  <Args, Key extends keyof Args>(key: Key): Source<Args, Args[Key]> =>
+  <Args, Key extends keyof Args>(key: Key): Source<Args, Args[Key], unknown> =>
   (_caller, args) =>
     args[key];
 
