@@ -9623,6 +9623,7 @@ __metadata:
     graphql-subscriptions: "npm:3.0.0"
     graphql-upload: "npm:17.1.0"
     handlebars: "npm:4.7.10"
+    jose: "catalog:"
     kanel: "npm:4.0.6"
     knex: "catalog:"
     migrate: "npm:^2.1.0"
@@ -15331,6 +15332,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jose@npm:6.2.15, jose@npm:^6.2.15":
+  version: 6.2.15
+  resolution: "jose@npm:6.2.15"
+  checksum: 10/57ea834a3aae6612b603dc04e5e068dabf1582934ffc759f004a0c654632bec06e6184aee73246157d03fb56179d50ac4e5c56ad02cf939086ef888ae8d8ebec
+  languageName: node
+  linkType: hard
+
 "jose@npm:^4.13.2":
   version: 4.15.9
   resolution: "jose@npm:4.15.9"
@@ -15342,13 +15350,6 @@ __metadata:
   version: 5.10.0
   resolution: "jose@npm:5.10.0"
   checksum: 10/03881d1dfb390dcf50926402edcfe233bf557b5a77321fcb1bdb53453bc1cdd26d2d0a9ab28c7445cbb826881f84fdf5074179700f10c2711ccb9880f51065d7
-  languageName: node
-  linkType: hard
-
-"jose@npm:^6.2.15":
-  version: 6.2.15
-  resolution: "jose@npm:6.2.15"
-  checksum: 10/57ea834a3aae6612b603dc04e5e068dabf1582934ffc759f004a0c654632bec06e6184aee73246157d03fb56179d50ac4e5c56ad02cf939086ef888ae8d8ebec
   languageName: node
   linkType: hard
 
