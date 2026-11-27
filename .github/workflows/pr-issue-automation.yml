@@ -33,6 +33,19 @@ jobs:
           private-key: ${{ secrets.FILIGRANHQ_PROJECT_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
+      # A pull request of this repository runs its own project-dates action: its author already controls this
+      # workflow file, so that adds no access, and it lets a change to the action run on its own pull request.
+      # A pull request from a fork runs the default branch version, never code from the fork.
+      - name: Checkout the project dates action
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.sha || github.event.repository.default_branch }}
+          sparse-checkout: |
+            .github/actions/project-dates
+            .nvmrc
+          persist-credentials: false
+
       - name: Assign PR to creator
         if: github.event_name == 'pull_request' && github.event.action == 'opened'
         uses: actions/github-script@v9
@@ -317,7 +330,7 @@ jobs:
               }
             }
 
-      - name: Update issues status and start date in project
+      - name: Update issues status in project
         if: steps.extract_issues.outputs.issue_numbers != '' && github.event.action != 'closed'
         uses: actions/github-script@v9
         with:
@@ -390,20 +403,10 @@ jobs:
                 field.name === 'Status' && field.options
               );
 
-              // Find the start date field using lowercase comparison ("Dev start date", formerly "Start date")
-              const startDateField = project.fields.nodes.find(field =>
-                ['dev start date', 'start date'].includes(field.name.toLowerCase()) && field.dataType === 'DATE'
-              );
-
               if (!statusField) {
                 console.log('Status field not found');
                 console.log('Available fields:', project.fields.nodes.map(f => f.name));
                 return;
-              }
-
-              if (!startDateField) {
-                console.log('Start date field not found');
-                console.log('Available date fields:', project.fields.nodes.filter(f => f.dataType === 'DATE').map(f => `${f.name} (${f.dataType})`));
               }
 
               // Find the matching status option
@@ -531,48 +534,6 @@ jobs:
                   });
                   console.log(`✅ Successfully updated issue #${issueNumber} status to "${status}"`);
 
-                  // Update Start date if not already set and status is "Development"
-                  if (status.toLowerCase() === 'development' && startDateField) {
-                    // Find current start date from field values
-                    const currentStartDateField = projectItem.fieldValues.nodes.find(fv =>
-                      fv.__typename === 'ProjectV2ItemFieldDateValue' &&
-                      fv.field.id === startDateField.id
-                    );
-                    const currentStartDate = currentStartDateField?.date;
-
-                    if (!currentStartDate) {
-                      const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-                      console.log(`Setting Start date for issue #${issueNumber} to ${today}...`);
-
-                      await github.graphql(`
-                        mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $date: Date!) {
-                          updateProjectV2ItemFieldValue(
-                            input: {
-                              projectId: $projectId
-                              itemId: $itemId
-                              fieldId: $fieldId
-                              value: {
-                                date: $date
-                              }
-                            }
-                          ) {
-                            projectV2Item {
-                              id
-                            }
-                          }
-                        }
-                      `, {
-                        projectId: project.id,
-                        itemId: projectItem.id,
-                        fieldId: startDateField.id,
-                        date: today
-                      });
-                      console.log(`✅ Successfully set Start date for issue #${issueNumber}`);
-                    } else {
-                      console.log(`Start date already set for issue #${issueNumber}: ${currentStartDate}`);
-                    }
-                  }
-
                 } catch (error) {
                   console.error(`Error updating issue #${issueNumber}:`, error);
                   if (error.errors) {
@@ -581,6 +542,22 @@ jobs:
                 }
               }
             }
+
+      # Development started (draft PR) or PR opened: write Dev start date once. When that sets the start date and
+      # Planned ETA is empty, an alert goes to the n8n webhook already used for deployment notifications, which
+      # decides what to do with it. A failure of this step never blocks the rest of the automation.
+      - name: Set Dev start date and alert when Planned ETA is missing
+        if: github.event_name == 'pull_request' && github.event.action != 'closed' && steps.extract_issues.outputs.issue_numbers != ''
+        continue-on-error: true
+        uses: ./.github/actions/project-dates
+        with:
+          event: start
+          token: ${{ steps.app-token.outputs.token }}
+          issues: ${{ steps.extract_issues.outputs.issue_numbers }}
+          pr-number: ${{ github.event.pull_request.number }}
+          pr-url: ${{ github.event.pull_request.html_url }}
+          pr-author: ${{ github.event.pull_request.user.login }}
+          webhook-url: ${{ secrets.N8N_NOTIF_DEPLOYMENT_WEBHOOK }}
 
       - name: Update issues status to Ready to Deploy on merge
         if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.extract_issues.outputs.issue_numbers != ''
@@ -761,6 +738,21 @@ jobs:
             } catch (error) {
               console.error('Error updating project status:', error);
             }
+
+      # Development finished: Adjusted ETA is the merge date. A PR reopened and merged again, or the last PR of
+      # a task with several PRs, overwrites it: the latest merge wins.
+      - name: Set Adjusted ETA on merge
+        if: github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && steps.extract_issues.outputs.issue_numbers != ''
+        continue-on-error: true
+        uses: ./.github/actions/project-dates
+        with:
+          event: merge
+          token: ${{ steps.app-token.outputs.token }}
+          issues: ${{ steps.extract_issues.outputs.issue_numbers }}
+          pr-number: ${{ github.event.pull_request.number }}
+          pr-url: ${{ github.event.pull_request.html_url }}
+          pr-author: ${{ github.event.pull_request.user.login }}
+          webhook-url: ${{ secrets.N8N_NOTIF_DEPLOYMENT_WEBHOOK }}
 
       - name: Check for approval and label
         if: github.event_name == 'pull_request_review' || github.event_name == 'pull_request_target' || github.event_name == 'workflow_run'

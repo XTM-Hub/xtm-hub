@@ -1,0 +1,65 @@
+name: Release project sync
+
+# When a production release (a `vX.Y.Z` tag) has been built and deployed by "Run XTM Hub CI/CD", the tasks of the pull
+# requests it ships go from "Ready to Deploy" to "Done" and get their Prod date. The release is the commits between
+# the previous release tag and this one.
+on:
+  workflow_run:
+    workflows: ["Run XTM Hub CI/CD"]
+    types: [completed]
+
+jobs:
+  sync-prod-date:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request'
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - name: Find the released tag and the one before it
+        id: tags
+        env:
+          RUN_REF: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          if ! [[ "$RUN_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Run on '$RUN_REF' is not a release tag, nothing to do"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "release=true" >> "$GITHUB_OUTPUT"
+          echo "tag=$RUN_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout the default branch with its tags
+        if: steps.tags.outputs.release == 'true'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Find the previous release tag
+        if: steps.tags.outputs.release == 'true'
+        id: previous
+        env:
+          TAG: ${{ steps.tags.outputs.tag }}
+        run: |
+          PREVIOUS=$(git tag -l 'v*' --sort=-v:refname | grep -A1 -Fx "$TAG" | tail -n +2 | head -n 1 || true)
+          echo "previous=$PREVIOUS" >> "$GITHUB_OUTPUT"
+          echo "Release $TAG, previous release: ${PREVIOUS:-none}"
+
+      - uses: actions/create-github-app-token@v3
+        if: steps.tags.outputs.release == 'true'
+        id: app-token
+        with:
+          app-id: ${{ vars.FILIGRANHQ_PROJECT_APP_ID }}
+          private-key: ${{ secrets.FILIGRANHQ_PROJECT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Set Prod date and move the tasks to Done
+        if: steps.tags.outputs.release == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/project-dates
+        with:
+          event: release
+          token: ${{ steps.app-token.outputs.token }}
+          tag: ${{ steps.tags.outputs.tag }}
+          previous-tag: ${{ steps.previous.outputs.previous }}
+          webhook-url: ${{ secrets.N8N_NOTIF_DEPLOYMENT_WEBHOOK }}
