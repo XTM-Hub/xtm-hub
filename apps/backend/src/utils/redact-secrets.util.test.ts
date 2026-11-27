@@ -52,10 +52,33 @@ describe('redactSecrets', () => {
     ['password', { email: 'user@example.com', password: 'secret-password' }],
     ['platformToken', { platformToken: 'platform-token' }],
     ['client_secret', { client_secret: 'client-secret' }],
+    ['platformAssertion', { platformAssertion: 'platform-assertion' }],
+    ['XTM-Hub-Platform-Assertion', { 'XTM-Hub-Platform-Assertion': 'jws' }],
   ])('redacts %s whatever its case', (key, variables) => {
     const redacted = redactSecrets(variables) as Record<string, unknown>;
 
     expect(redacted[key]).toBe(REDACTED_VALUE);
+  });
+
+  it('should redact the platform credentials of request headers and keep the platform id', () => {
+    // Given
+    const headers = {
+      'xtm-hub-platform-id': 'c9e8fee1-8cb4-4fff-b335-5ea350615df4',
+      'xtm-hub-platform-token': CREDENTIAL,
+      'xtm-hub-platform-assertion': CREDENTIAL,
+      'xtm-hub-user-platform-token': CREDENTIAL,
+    };
+
+    // When
+    const redacted = redactSecrets(headers);
+
+    // Then
+    expect(redacted).toEqual({
+      'xtm-hub-platform-id': 'c9e8fee1-8cb4-4fff-b335-5ea350615df4',
+      'xtm-hub-platform-token': REDACTED_VALUE,
+      'xtm-hub-platform-assertion': REDACTED_VALUE,
+      'xtm-hub-user-platform-token': REDACTED_VALUE,
+    });
   });
 
   it.each([[undefined], [null], ['plain text'], [42]])(
@@ -119,6 +142,21 @@ describe('redactGraphQLRequest', () => {
 
     expect(redacted.query).not.toContain(CREDENTIAL);
     expect(redacted.query).toContain(REDACTED_VALUE);
+  });
+
+  it('should redact a variable bound to an assertion argument whatever its name', () => {
+    // Given
+    const request = {
+      query:
+        'mutation Enroll($a: String!) { enroll(input: { assertion: $a }) { id } }',
+      variables: { a: CREDENTIAL },
+    };
+
+    // When
+    const redacted = redactGraphQLRequest(request);
+
+    // Then
+    expect(redacted.variables).toEqual({ a: REDACTED_VALUE });
   });
 
   it('keeps the values that are not secrets', () => {

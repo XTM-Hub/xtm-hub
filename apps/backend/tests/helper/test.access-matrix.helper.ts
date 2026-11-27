@@ -344,6 +344,19 @@ export const TestAccessMatrixHelper = {
     ) => execute(operation, variables, contextOfToken(tokenRequest));
   },
 
+  // Call inside a describe: runs an operation as a platform that sends these headers, without session
+  useGraphqlAsPlatform: () => {
+    const execute = useGraphqlServer();
+    return (
+      headers: Record<string, string>,
+      operation: string,
+      variables: Record<string, unknown> = {}
+    ) =>
+      execute(operation, variables, {
+        req: { headers },
+      } as unknown as Context);
+  },
+
   // Call inside a describe named after the operation. Runs it as an anonymous visitor,
   // a member with no portal capability and a platform admin, plus the organization, system-token and platform rows that expected lists
   expectAccessMatrix: ({
