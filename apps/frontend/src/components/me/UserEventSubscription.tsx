@@ -5,7 +5,6 @@ import { useTranslate } from '@/hooks/use-translate';
 import { refreshAnalyticsUser } from '@/lib/analytics/analytics.user';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { clearFiltersStorage } from '@/utils/filters-storage.utils';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { setCurrentUser } from '@/components/me/current-user-query';
@@ -20,14 +19,12 @@ import { useQueryClient } from '@tanstack/react-query';
 // Component
 const UserEventSubscription = () => {
   const t = useTranslate();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { mutate: commitLogout } = useLogoutMutation(portalGraphqlClient, {
     onSuccess() {
       refreshAnalyticsUser().then(() => {
-        router.push('/?error=account-deleted');
-        router.refresh();
+        window.location.href = '/?error=account-deleted';
       });
     },
   });

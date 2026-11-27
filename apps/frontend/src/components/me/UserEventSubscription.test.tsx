@@ -8,10 +8,11 @@ import { meKeys } from '@graphql/me/me.keys';
 import { mockUser } from '@graphql/mocks';
 import { QueryClient } from '@tanstack/react-query';
 import { act } from '@testing-library/react';
-import { useRouter } from 'next/navigation';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const DELETED_USER_ID = 'deleted-user-id';
+const CURRENT_HREF = '/app';
+const ACCOUNT_DELETED_HREF = '/?error=account-deleted';
 const EDITED_USER = mockUser({ id: 'user-1', first_name: 'Grace' });
 
 const testState = vi.hoisted(() => ({
@@ -57,6 +58,7 @@ const receiveAccountDeletion = () =>
 const succeedLogout = () => testState.logoutOptions?.onSuccess();
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
@@ -74,13 +76,15 @@ describe('UserEventSubscription', () => {
   });
 
   it.each([
-    ['stay', USER_PROPERTIES_WAIT_MS - 1, 0],
-    ['leave', USER_PROPERTIES_WAIT_MS, 1],
+    ['stay', USER_PROPERTIES_WAIT_MS - 1, CURRENT_HREF],
+    ['leave', USER_PROPERTIES_WAIT_MS, ACCOUNT_DELETED_HREF],
   ])(
     'should %s %s ms after the account is deleted when the analytics user is still refreshing',
-    async (_outcome, elapsedMs, pushCount) => {
+    async (_outcome, elapsedMs, expectedHref) => {
       // Given
       vi.useFakeTimers();
+      const location = { href: CURRENT_HREF };
+      vi.stubGlobal('location', location);
       vi.spyOn(QueryClient.prototype, 'invalidateQueries').mockReturnValue(
         new Promise(() => undefined)
       );
@@ -92,7 +96,7 @@ describe('UserEventSubscription', () => {
       await act(() => vi.advanceTimersByTimeAsync(elapsedMs));
 
       // Then
-      expect(vi.mocked(useRouter)().push).toHaveBeenCalledTimes(pushCount);
+      expect(location.href).toBe(expectedHref);
     }
   );
 
