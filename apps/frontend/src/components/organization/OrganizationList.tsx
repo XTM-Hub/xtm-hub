@@ -20,33 +20,40 @@ import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import { Chip, SearchField } from '@filigran/design-system';
+import { Chip, Link, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import {
   OrderingMode,
-  OrganizationItemFragment,
   OrganizationOrdering,
+  type OrganizationsAdminListQuery,
   type OrganizationsAdminListQueryVariables,
   useOrganizationsAdminListQuery,
 } from '@graphql/generated';
 import { adminOrganizationsKeys } from '@graphql/organization/organization.keys';
 import { keepPreviousData } from '@tanstack/react-query';
 import { ColumnDef, Row } from '@tanstack/react-table';
+import NextLink from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+
+type OrganizationAdminRow =
+  OrganizationsAdminListQuery['organizations']['edges'][number]['node'];
+
+const organizationPath = (pathname: string, organizationId: string) =>
+  `${pathname}/${encodeURIComponent(organizationId)}`;
 
 const OrganizationList = () => {
   const t = useTranslate();
   const router = useRouter();
   const pathname = usePathname();
   const [editOrganization, setEditOrganization] = useState<
-    OrganizationItemFragment | undefined
+    OrganizationAdminRow | undefined
   >(undefined);
   const [deleteOrganization, setDeleteOrganization] = useState<
-    OrganizationItemFragment | undefined
+    OrganizationAdminRow | undefined
   >(undefined);
   const canManageOrganizations = useAdminByPass();
-  const columns = useMemo<ColumnDef<OrganizationItemFragment>[]>(
+  const columns = useMemo<ColumnDef<OrganizationAdminRow>[]>(
     () => [
       {
         accessorKey: 'name',
@@ -74,6 +81,31 @@ const OrganizationList = () => {
           );
         },
       },
+      {
+        id: 'members',
+        header: t('OrganizationForm.Members'),
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Link
+            asChild
+            size="compact">
+            <NextLink
+              {...analyticsId('admin_organization_members_open')}
+              href={`${organizationPath(pathname, row.original.id)}/members`}>
+              {t('OrganizationForm.SeeMembers')}
+            </NextLink>
+          </Link>
+        ),
+      },
+      {
+        accessorKey: 'members_count',
+        id: 'members_count',
+        header: t('OrganizationForm.Total'),
+        enableSorting: false,
+        cell: ({ row }) => {
+          return <>{row.original.members_count}</>;
+        },
+      },
       ...(canManageOrganizations
         ? [
             {
@@ -82,7 +114,7 @@ const OrganizationList = () => {
               enableHiding: false,
               enableSorting: false,
               enableResizing: false,
-              cell: ({ row }: { row: Row<OrganizationItemFragment> }) => (
+              cell: ({ row }: { row: Row<OrganizationAdminRow> }) => (
                 <div className="flex items-center justify-end">
                   <IconActions
                     analyticsId="list_row_actions_open"
@@ -94,7 +126,7 @@ const OrganizationList = () => {
                       {...analyticsId('admin_organization_services_open')}
                       onClick={() => {
                         router.push(
-                          `${pathname}/${encodeURIComponent(row.original.id)}/subscribed-services`
+                          `${organizationPath(pathname, row.original.id)}/subscribed-services`
                         );
                       }}>
                       {t('Service.SubscribedServices')}
@@ -155,7 +187,7 @@ const OrganizationList = () => {
       placeholderData: keepPreviousData,
     });
 
-  const organizations = useMemo<OrganizationItemFragment[]>(
+  const organizations = useMemo<OrganizationAdminRow[]>(
     () => (data?.organizations.edges ?? []).map(({ node }) => node),
     [data]
   );

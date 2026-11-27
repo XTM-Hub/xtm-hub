@@ -33,33 +33,31 @@ export default class OrganizationPage {
     await this.page.getByRole('button', { name: 'Validate' }).click();
   }
 
+  private getRow(organizationName: string) {
+    return this.page
+      .getByRole('row')
+      .filter({ has: this.page.getByText(organizationName, { exact: true }) });
+  }
+
+  private async openRowMenu(organizationName: string) {
+    await this.getRow(organizationName)
+      .getByRole('button', { name: 'Open menu', exact: true })
+      .click();
+  }
+
   async editOrganization(
     organizationName: string,
-    organizationDomain: string,
     organizationNewName: string
   ) {
-    await this.page
-      .getByRole('row', {
-        name: `${organizationName} ${organizationDomain} Open`,
-      })
-      .getByRole('button')
-      .click();
+    await this.openRowMenu(organizationName);
     await this.page.getByRole('menuitem', { name: 'Update' }).click();
     await this.page.getByPlaceholder('Name').fill(organizationNewName);
 
     await this.page.getByRole('button', { name: 'Validate' }).click();
   }
 
-  async deleteOrganization(
-    organizationName: string,
-    organizationDomain: string
-  ) {
-    await this.page
-      .getByRole('row', {
-        name: `${organizationName} ${organizationDomain} Open`,
-      })
-      .getByRole('button')
-      .click();
+  async deleteOrganization(organizationName: string) {
+    await this.openRowMenu(organizationName);
     await this.page.getByRole('menuitem', { name: 'Delete' }).click();
 
     await this.page.getByRole('button', { name: 'Delete' }).click();

@@ -841,8 +841,11 @@
       "DuplicateName": "An organization with this name already exists",
       "Name": "Organization name is required"
     },
+    "Members": "Members",
     "Name": "Name",
-    "SureDeleteOrganization": "Are you sure you want to delete this organization {organizationName}? This action can not be undone."
+    "SeeMembers": "See members",
+    "SureDeleteOrganization": "Are you sure you want to delete this organization {organizationName}? This action can not be undone.",
+    "Total": "Total"
   },
   "OrganizationInServiceAction": {
     "AddOrganization": "Subscribe organization to the",

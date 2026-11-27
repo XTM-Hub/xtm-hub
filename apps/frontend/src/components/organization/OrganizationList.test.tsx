@@ -13,6 +13,7 @@ import {
 } from '@graphql/generated';
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { usePathname } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ORGANIZATION_ID = 'organization-filigran';
@@ -23,6 +24,8 @@ const NEW_DOMAIN = 'acme.com';
 const SEARCH_TERM = 'fili';
 const SERVER_ERROR = 'ORGANIZATION_NOT_FOUND';
 const PERSONAL_ORGANIZATION_ID = 'organization-personal';
+const ORGANIZATIONS_PATH = '/app/admin/organizations';
+const MEMBERS_COUNT = 12;
 const DEFAULT_PAGE_SIZE = 50;
 const STORED_PAGE_SIZE = 10;
 const SEVERAL_PAGES_COUNT = DEFAULT_PAGE_SIZE * 2;
@@ -190,6 +193,9 @@ const getSearchField = () =>
     name: 'OrganizationActions.SearchOrganizationWithEmail',
   });
 
+const getSeeMembersLink = () =>
+  screen.getByRole('link', { name: 'OrganizationForm.SeeMembers' });
+
 const getNextPageButton = () =>
   screen.getByRole('button', { name: 'DesignSystem.DataTable.NextPage' });
 
@@ -311,6 +317,46 @@ describe('OrganizationList', () => {
       expect(getRowOf(ORGANIZATION_NAME)).toHaveTextContent(
         ORGANIZATION_DOMAIN
       );
+    });
+
+    it.each([
+      { profile: 'BYPASS', me: BYPASS_USER },
+      {
+        profile: 'READ_ORGANIZATION_MEMBERS without BYPASS',
+        me: READ_ORGANIZATION_MEMBERS_USER,
+      },
+    ])(
+      "should link See members to the organization's members page when the user holds $profile",
+      async ({ me }) => {
+        // Given
+        vi.mocked(usePathname).mockReturnValue(ORGANIZATIONS_PATH);
+
+        // When
+        await renderList({ me });
+
+        // Then
+        expect(getSeeMembersLink()).toHaveAttribute(
+          'href',
+          `${ORGANIZATIONS_PATH}/${ORGANIZATION_ID}/members`
+        );
+      }
+    );
+
+    it('should display the members count of the organization in the Total column', async () => {
+      // Given
+      mocks.listOrganizations.mockResolvedValue(
+        makeListResponse([makeOrganization({ members_count: MEMBERS_COUNT })])
+      );
+
+      // When
+      await renderList();
+
+      // Then
+      expect(
+        within(getRowOf(ORGANIZATION_NAME)).getByRole('cell', {
+          name: String(MEMBERS_COUNT),
+        })
+      ).toBeInTheDocument();
     });
 
     it('should show skeleton rows when the first page is loading', () => {

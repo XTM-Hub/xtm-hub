@@ -841,8 +841,11 @@
       "DuplicateName": "Une organisation portant ce nom existe déjà",
       "Name": "Le nom de l'organisation est requis"
     },
+    "Members": "Membres",
     "Name": "Nom",
-    "SureDeleteOrganization": "Êtes-vous sûr de vouloir supprimer l'organisation {organizationName} ? Cette action ne pourra pas être annulée."
+    "SeeMembers": "Voir les membres",
+    "SureDeleteOrganization": "Êtes-vous sûr de vouloir supprimer l'organisation {organizationName} ? Cette action ne pourra pas être annulée.",
+    "Total": "Total"
   },
   "OrganizationInServiceAction": {
     "AddOrganization": "Abonnement de l'organisation au service",

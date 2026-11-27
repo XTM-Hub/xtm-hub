@@ -841,8 +841,11 @@
       "DuplicateName": "この名前の組織は既に存在する",
       "Name": "組織名は必須です"
     },
+    "Members": "メンバー",
     "Name": "組織名",
-    "SureDeleteOrganization": "本当にこの組織 {organizationName} を削除しますか？この操作は取り消せません。"
+    "SeeMembers": "メンバーを見る",
+    "SureDeleteOrganization": "本当にこの組織 {organizationName} を削除しますか？この操作は取り消せません。",
+    "Total": "合計"
   },
   "OrganizationInServiceAction": {
     "AddOrganization": "組織を",

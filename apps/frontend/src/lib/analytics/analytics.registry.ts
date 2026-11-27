@@ -56,6 +56,7 @@ export const ANALYTICS_ELEMENT_IDS = {
   },
   admin_organization_edit: { action: 'Edit organization' },
   admin_organization_form_submit: { action: 'Save organization' },
+  admin_organization_members_open: { action: 'Open organization members' },
   admin_organization_services_open: {
     action: 'Open organization subscribed services',
   },

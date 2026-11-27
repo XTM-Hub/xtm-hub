@@ -35,7 +35,6 @@ test.describe('Organization Management', () => {
     await test.step('Edit organization', async () => {
       await organizationPage.editOrganization(
         TEST_ORGANIZATION.name,
-        TEST_ORGANIZATION.domain,
         TEST_ORGANIZATION.newName
       );
       await expect(
@@ -44,10 +43,7 @@ test.describe('Organization Management', () => {
     });
 
     await test.step('Delete organization', async () => {
-      await organizationPage.deleteOrganization(
-        TEST_ORGANIZATION.newName,
-        TEST_ORGANIZATION.domain
-      );
+      await organizationPage.deleteOrganization(TEST_ORGANIZATION.newName);
       await expect(
         page.getByRole('cell', { name: TEST_ORGANIZATION.newName })
       ).not.toBeVisible();
