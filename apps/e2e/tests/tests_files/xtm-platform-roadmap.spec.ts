@@ -269,8 +269,15 @@ test.describe('XTM Platform Roadmap', () => {
     });
 
     await test.step('"See more" navigates to the roadmap page', async () => {
-      await page.getByRole('link', { name: 'See more' }).click();
-      await page.waitForURL(/xtm-platform-roadmap/);
+      // One click can be lost while the homepage is still settling, and nothing replays it: click
+      // again until the address shows the roadmap page, never once the page has left the homepage.
+      const seeMore = page.getByRole('link', { name: 'See more' });
+      await expect(async () => {
+        if (!/xtm-platform-roadmap/.test(page.url())) {
+          await seeMore.click({ timeout: 3000 });
+        }
+        await expect(page).toHaveURL(/xtm-platform-roadmap/, { timeout: 3000 });
+      }).toPass({ timeout: 30000 });
     });
   });
 
