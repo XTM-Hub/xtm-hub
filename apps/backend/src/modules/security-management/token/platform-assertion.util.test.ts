@@ -426,11 +426,8 @@ describe('verifyPlatformAssertion', () => {
   ])(
     'should refuse the assertion as malformed when it is $name',
     async ({ assertion }) => {
-      // Given
-      const input = assertion;
-
       // When
-      const result = await verify(input);
+      const result = await verify(assertion);
 
       // Then
       expect(result).toEqual({
@@ -543,77 +540,43 @@ describe('isValidPublicJwk', () => {
 });
 
 describe('verifyPlatformAssertion on assertions signed by the products', () => {
-  it('should accept an OpenCTI assertion', async () => {
-    // Given
-    const { assertion, platformId, publicJwk: jwk, now } = OPENCTI_SAMPLE;
-
-    // When
-    const result = await verifyPlatformAssertion(assertion, {
-      platformId,
-      publicJwk: jwk,
-      now,
-    });
-
-    // Then
-    expect(result).toEqual({
-      valid: true,
-      claims: {
-        iss: platformId,
-        aud: PLATFORM_ASSERTION_AUDIENCE,
+  it.each([
+    {
+      name: 'an OpenCTI assertion',
+      sample: OPENCTI_SAMPLE,
+      expectedClaims: {
         iat: 1796983200,
         exp: 1796983260,
         jti: '4dc1bbf9-fb15-4b19-ba4f-d7865cfd90c0',
         identifier: 'opencti',
       },
-    });
-  });
-
-  it('should return the htu of an OpenCTI download assertion as signed', async () => {
-    // Given
-    const {
-      htuAssertion,
-      htu,
-      platformId,
-      publicJwk: jwk,
-      now,
-    } = OPENCTI_SAMPLE;
-
-    // When
-    const result = await verifyPlatformAssertion(htuAssertion, {
-      platformId,
-      publicJwk: jwk,
-      now,
-    });
-
-    // Then
-    expect(result).toMatchObject({ valid: true, claims: { htu } });
-  });
-
-  // OpenAEV and XTM One still put the literal `typ: "JWT"` in the header instead of `"xtm-hub-platform+jwt"`. That
-  // is their only mismatch: signature, kid, aud, iss, lifetime and jti all pass, and an OpenAEV tenant assertion is
-  // an ordinary assertion with an extra tenant_id claim. Once the products send the protocol's typ, regenerate the
-  // samples and expect them to be accepted.
-  it.each([
-    {
-      name: 'an OpenAEV assertion for the whole instance',
-      assertion: OPENAEV_SAMPLE.instanceAssertion,
-      sample: OPENAEV_SAMPLE,
     },
     {
       name: 'an OpenAEV assertion for one tenant',
-      assertion: OPENAEV_SAMPLE.tenantAssertion,
       sample: OPENAEV_SAMPLE,
+      expectedClaims: {
+        iat: 1795785911,
+        exp: 1795785971,
+        jti: 'ed8c7547-6b4b-49ad-9352-e612e2e98860',
+        identifier: 'openaev',
+        tenant_id: OPENAEV_SAMPLE.tenantId,
+      },
     },
     {
       name: 'an XTM One assertion',
-      assertion: XTM_ONE_SAMPLE.assertion,
       sample: XTM_ONE_SAMPLE,
+      expectedClaims: {
+        iat: 1795785934,
+        exp: 1795785994,
+        jti: '07c586fb-d863-48d5-b4ed-8b3c5eac1670',
+        identifier: 'xtmone',
+      },
     },
   ])(
-    'should refuse $name: signed with typ "JWT" instead of "xtm-hub-platform+jwt"',
-    async ({ assertion, sample }) => {
+    'should accept $name with its signed claims',
+    async ({ sample, expectedClaims }) => {
       // Given
-      const { platformId, publicJwk: jwk, now } = sample;
+      const { assertion, platformId, publicJwk: jwk, now } = sample;
 
       // When
       const result = await verifyPlatformAssertion(assertion, {
@@ -624,9 +587,34 @@ describe('verifyPlatformAssertion on assertions signed by the products', () => {
 
       // Then
       expect(result).toEqual({
-        valid: false,
-        reason: PlatformAssertionFailureReason.INVALID_TYPE,
+        valid: true,
+        claims: {
+          iss: platformId,
+          aud: PLATFORM_ASSERTION_AUDIENCE,
+          ...expectedClaims,
+        },
       });
+    }
+  );
+
+  it.each([
+    { name: 'an OpenCTI', sample: OPENCTI_SAMPLE },
+    { name: 'an XTM One', sample: XTM_ONE_SAMPLE },
+  ])(
+    'should return the htu of $name download assertion as signed',
+    async ({ sample }) => {
+      // Given
+      const { htuAssertion, htu, platformId, publicJwk: jwk, now } = sample;
+
+      // When
+      const result = await verifyPlatformAssertion(htuAssertion, {
+        platformId,
+        publicJwk: jwk,
+        now,
+      });
+
+      // Then
+      expect(result).toMatchObject({ valid: true, claims: { htu } });
     }
   );
 });

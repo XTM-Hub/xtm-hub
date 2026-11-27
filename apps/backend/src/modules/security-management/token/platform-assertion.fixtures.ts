@@ -33,12 +33,13 @@ export const OPENCTI_SAMPLE = {
 };
 
 /**
- * OpenAEV, PR OpenAEV-Platform/openaev#9749 at commit e8b0aac8ed, `io.openaev.xtmhub.XtmHubKeyService`.
+ * OpenAEV, PR OpenAEV-Platform/openaev#9749 at commit a59c4806b6, `io.openaev.xtmhub.XtmHubKeyService`. OpenAEV
+ * derives one key per tenant, served at `/api/tenants/{tenantId}/xtmhub/jwks`.
  *
- * Produced by compiling the PR's `XtmHubKeyService`, `Ed25519KeyUtils` and `XtmHubPublicJwk` unchanged with jjwt
- * 0.13.0 and Bouncy Castle 1.87, beside stubs of the settings classes it reads (no stored key version, so version 1),
- * with the encryption key `h2-throwaway-test-key-not-a-real-encryption-key`, then
- * `signAssertion(platformId, null)` and `signAssertion(platformId, tenantId)`.
+ * Produced by compiling the PR's `XtmHubKeyService` and `Ed25519KeyUtils` unchanged with jjwt 0.13.0 and Bouncy
+ * Castle 1.87, beside stubs of the settings and tenant classes it reads (no stored key version, so version 1; every
+ * tenant active), with the encryption key `h2-throwaway-openaev-encryption-key-not-a-real-one`, then
+ * `tenantPublicJwk(tenantId)` and `signAssertion(platformId, tenantId)`.
  */
 export const OPENAEV_SAMPLE = {
   publicJwk: {
@@ -46,36 +47,37 @@ export const OPENAEV_SAMPLE = {
     crv: 'Ed25519',
     alg: 'EdDSA',
     use: 'sig',
-    kid: 'ML41dejY-4Xp0ifmg4a36yUD5r42ifOtYkdrQGDSRoQ',
-    x: 'qmerE3XsBSdvKZpzpSWko9laAdKC-WrEy04xkl2NjC0',
+    kid: '-ToyANfcvsEI9bW-QysLNJxgA9V8Y6m7_I00OGCJEds',
+    x: 'w_JSV3zApVVKpZgvH-SWKqudwCo1CUF5iMg05b1jJRg',
   },
   platformId: '3a6f9d2b-8c41-4e7f-b5a0-1d9c7e2f4b68',
-  now: new Date(1795687748 * 1000),
-  instanceAssertion:
-    'eyJraWQiOiJNTDQxZGVqWS00WHAwaWZtZzRhMzZ5VUQ1cjQyaWZPdFlrZHJRR0RTUm9RIiwidHlwIjoiSldUIiwiYWxnIjoiRWREU0EifQ.eyJpc3MiOiIzYTZmOWQyYi04YzQxLTRlN2YtYjVhMC0xZDljN2UyZjRiNjgiLCJhdWQiOiJ4dG0taHViIiwiaWRlbnRpZmllciI6Im9wZW5hZXYiLCJpYXQiOjE3OTU2ODc3NDgsImV4cCI6MTc5NTY4ODA0OCwianRpIjoiNWI4MjU5MzItNzgwYS00YTNjLWFhMGEtNTI5N2VlMTdkY2M5In0.113r9pEs8WkqIqVF1ul-5blALCGlcUEpr_kOk0wc_HM0oDGMdvfvdmk4fVcE-O3zohOBv0dx9B-gQ0wXuO1UBA',
   tenantId: '5e1b8f3a-2d7c-4a96-8e0b-7f4c1a9d3e25',
-  tenantAssertion:
-    'eyJraWQiOiJNTDQxZGVqWS00WHAwaWZtZzRhMzZ5VUQ1cjQyaWZPdFlrZHJRR0RTUm9RIiwidHlwIjoiSldUIiwiYWxnIjoiRWREU0EifQ.eyJpc3MiOiIzYTZmOWQyYi04YzQxLTRlN2YtYjVhMC0xZDljN2UyZjRiNjgiLCJhdWQiOiJ4dG0taHViIiwiaWRlbnRpZmllciI6Im9wZW5hZXYiLCJpYXQiOjE3OTU2ODc3NDgsImV4cCI6MTc5NTY4ODA0OCwianRpIjoiNDkwZjZiMzQtZDA2NC00ZThhLWJhMzAtMDA3YzVhYTgxZTY3IiwidGVuYW50X2lkIjoiNWUxYjhmM2EtMmQ3Yy00YTk2LThlMGItN2Y0YzFhOWQzZTI1In0.z7dvup96BLosPoJekiLa_fnKbZqmrCckg8-kRewjOUCG2FXXL4uUXVrGYdn00yx5UbYqV_V0ii3uUnL3OcMkBw',
+  now: new Date(1795785911 * 1000),
+  assertion:
+    'eyJraWQiOiItVG95QU5mY3ZzRUk5YlctUXlzTE5KeGdBOVY4WTZtN19JMDBPR0NKRWRzIiwidHlwIjoieHRtLWh1Yi1wbGF0Zm9ybStqd3QiLCJhbGciOiJFZERTQSJ9.eyJpc3MiOiIzYTZmOWQyYi04YzQxLTRlN2YtYjVhMC0xZDljN2UyZjRiNjgiLCJhdWQiOiJ4dG0taHViIiwiaWRlbnRpZmllciI6Im9wZW5hZXYiLCJ0ZW5hbnRfaWQiOiI1ZTFiOGYzYS0yZDdjLTRhOTYtOGUwYi03ZjRjMWE5ZDNlMjUiLCJpYXQiOjE3OTU3ODU5MTEsImV4cCI6MTc5NTc4NTk3MSwianRpIjoiZWQ4Yzc1NDctNmI0Yi00OWFkLTkzNTItZTYxMmUyZTk4ODYwIn0.jOT94HZ5wqs7NToUtlLLNTvQINt4eBcmSoLdA4VrdcaYmWTvfP62b5DNPmzwRLEPSLOcnpA6SY933FjuTT9XDg',
 };
 
 /**
- * XTM One, PR XTM-One-Platform/xtm-one#1794 at commit 2482d283f, `backend/app/core/xtm_hub_key.py`.
+ * XTM One, PR XTM-One-Platform/xtm-one#2510 at commit 4545500f2f, `backend/app/core/xtm_hub_key.py`.
  *
  * Produced by a scratch Python script run against the PR's `backend/app`, with
- * `SECRET_KEY=h2-throwaway-test-secret-key-not-a-real-one-0123456789`:
- * `derive_key(1).sign_assertion(platform_id)`.
+ * `SECRET_KEY=h2-throwaway-xtm-one-secret-key-not-a-real-one`:
+ * `derive_key(1).sign_assertion(platform_id)` and `derive_key(1).sign_assertion(platform_id, htu=htu)`.
  */
 export const XTM_ONE_SAMPLE = {
   publicJwk: {
     kty: 'OKP',
     crv: 'Ed25519',
-    x: 'am2swtObeBIxt6kMfQW_7IpfeTA_AKBPntNvUjcxdHk',
-    kid: '08AEl536H88s91BNKbfkmSOvt1bC_poM2xwiqmWhGKM',
+    x: 'W0qmglk7qOJT9NYiwl22_HEwoBA1FyL_Luq7L82qT-A',
+    kid: '-dkQCiBG4g-PlvdirxPUezf7Jkh2Yyn0ZlihaIrd8As',
     alg: 'EdDSA',
     use: 'sig',
   },
   platformId: '9c2e7a4f-1b6d-4f38-a05e-8d3b2c6f1e97',
-  now: new Date(1795687765 * 1000),
+  now: new Date(1795785934 * 1000),
   assertion:
-    'eyJhbGciOiJFZERTQSIsImtpZCI6IjA4QUVsNTM2SDg4czkxQk5LYmZrbVNPdnQxYkNfcG9NMnh3aXFtV2hHS00iLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiI5YzJlN2E0Zi0xYjZkLTRmMzgtYTA1ZS04ZDNiMmM2ZjFlOTciLCJhdWQiOiJ4dG0taHViIiwiaWF0IjoxNzk1Njg3NzY1LCJleHAiOjE3OTU2ODgwNjUsImp0aSI6ImJlZGQ0ZTJiLTgwOWItNGVlNy1iYjI1LTY0ZWM1ZGU3MmUyYSIsImlkZW50aWZpZXIiOiJ4dG1vbmUifQ.6ymPwNB52W6YnWz5VrglmClaJbC_tLP2f_KQmV10IdGFoUh-ZcDxFo6Nr00b-uoPNX2lxIbquKu7CljTKVgPAA',
+    'eyJhbGciOiJFZERTQSIsImtpZCI6Ii1ka1FDaUJHNGctUGx2ZGlyeFBVZXpmN0praDJZeW4wWmxpaGFJcmQ4QXMiLCJ0eXAiOiJ4dG0taHViLXBsYXRmb3JtK2p3dCJ9.eyJpc3MiOiI5YzJlN2E0Zi0xYjZkLTRmMzgtYTA1ZS04ZDNiMmM2ZjFlOTciLCJhdWQiOiJ4dG0taHViIiwiaWF0IjoxNzk1Nzg1OTM0LCJleHAiOjE3OTU3ODU5OTQsImp0aSI6IjA3YzU4NmZiLWQ4NjMtNDhkNS1iNGVkLThiM2M1ZWFjMTY3MCIsImlkZW50aWZpZXIiOiJ4dG1vbmUifQ.aGN0oHwDYTBlL0WpiTL8eKzq0XD9v2szD0wh4Qo-bEb_16DrGXE1xT2NKBpifzmIzb8w6SFWecpYntvckT-cCw',
+  htu: '/document/get/7b3e1d9a-4c2f-4a85-b6e0-2f9d8c1a5e34/c4a8f2e6-1d7b-4e93-8a5c-6b0f3d2e9a71',
+  htuAssertion:
+    'eyJhbGciOiJFZERTQSIsImtpZCI6Ii1ka1FDaUJHNGctUGx2ZGlyeFBVZXpmN0praDJZeW4wWmxpaGFJcmQ4QXMiLCJ0eXAiOiJ4dG0taHViLXBsYXRmb3JtK2p3dCJ9.eyJpc3MiOiI5YzJlN2E0Zi0xYjZkLTRmMzgtYTA1ZS04ZDNiMmM2ZjFlOTciLCJhdWQiOiJ4dG0taHViIiwiaWF0IjoxNzk1Nzg1OTM0LCJleHAiOjE3OTU3ODU5OTQsImp0aSI6ImJjNTA0NTYyLTY2MDgtNDg1Ny1hZmE3LTM5M2NhZjE1ZDRjMSIsImlkZW50aWZpZXIiOiJ4dG1vbmUiLCJodHUiOiIvZG9jdW1lbnQvZ2V0LzdiM2UxZDlhLTRjMmYtNGE4NS1iNmUwLTJmOWQ4YzFhNWUzNC9jNGE4ZjJlNi0xZDdiLTRlOTMtOGE1Yy02YjBmM2QyZTlhNzEifQ.X3faYYUDq8zHpmPJH-d3oxTj8B8llHp2OgLN5kFsyUQedbK7qxsiwND229zwl6dZVYxqKQoDDaHMs8PgQsO_Bg',
 };
