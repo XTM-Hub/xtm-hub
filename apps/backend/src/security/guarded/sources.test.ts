@@ -4,7 +4,8 @@ import { PortalCapability } from '../../__generated__/resolvers-types';
 import { OrganizationId } from '../../model/kanel/public/Organization';
 import { NotFoundErrorCode } from '../../utils/error/error.code';
 import { orgGuard } from './guards/organization.guard';
-import { fromArg, fromRecord } from './sources';
+import { Principal } from './principal';
+import { fromArg, fromRecord, Source } from './sources';
 
 const {
   ANONYMOUS,
@@ -98,6 +99,35 @@ describe('sources', () => {
 
     // Then
     expect(source).not.toHaveBeenCalled();
+  });
+});
+
+describe('fromArg', () => {
+  type Args = { id: string };
+
+  it.each([
+    { label: 'an anonymous visitor', caller: ANONYMOUS },
+    { label: 'a user', caller: buildUserPrincipal() },
+  ])('should read the key from the arguments for $label', ({ caller }) => {
+    // Given
+    const source: Source<Args, string, Principal> = fromArg('id');
+
+    // When
+    const result = source(caller, { id: 'row-id' });
+
+    // Then
+    expect(result).toBe('row-id');
+  });
+
+  it('should fit a source of a user guard', () => {
+    // Given
+    const source: Source<Args, string> = fromArg('id');
+
+    // When
+    const result = source(buildUserPrincipal(), { id: 'row-id' });
+
+    // Then
+    expect(result).toBe('row-id');
   });
 });
 

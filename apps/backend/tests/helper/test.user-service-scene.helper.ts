@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from 'uuid';
-import { db } from '../../knexfile';
 import { ServiceInstanceId } from '../../src/model/kanel/public/ServiceInstance';
 import Subscription, {
   SubscriptionId,
@@ -19,24 +18,6 @@ const { serviceManager: MANAGER_USER_ID, serviceMember: MEMBER_USER_ID } =
 const TARGET_USER_ID =
   TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.ADMIN_ORGA.ID;
 
-const createSubscription = async (
-  organization_id: Subscription['organization_id'],
-  service_instance_id: ServiceInstanceId
-): Promise<Subscription> => {
-  const [subscription] = await db<Subscription>('Subscription')
-    .insert({
-      id: uuidv4() as SubscriptionId,
-      organization_id,
-      service_instance_id,
-      start_date: new Date('2025-01-01'),
-    })
-    .returning('*');
-  if (!subscription) {
-    throw new Error('The subscription was not created');
-  }
-  return subscription;
-};
-
 const grant = (
   user_id: UserId,
   subscription_id: SubscriptionId,
@@ -52,7 +33,7 @@ const deleteSubscription = async (subscription: Subscription) => {
   await TestUserHelper.user_Service.delete({
     subscription_id: subscription.id,
   });
-  await db<Subscription>('Subscription').where({ id: subscription.id }).del();
+  await TestServiceHelper.subscription.delete({ id: subscription.id });
 };
 
 type Cleanup = () => Promise<void>;
@@ -87,10 +68,10 @@ export const TestUserServiceSceneHelper = {
         onCleanup(() =>
           TestServiceHelper.serviceInstance.delete({ id: serviceInstance.id })
         );
-        const subscription = await createSubscription(
-          TEST_ORGANIZATIONS.FILIGRAN.ID,
-          serviceInstance.id
-        );
+        const subscription = await TestServiceHelper.subscription.create({
+          organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          service_instance_id: serviceInstance.id,
+        });
         onCleanup(() => deleteSubscription(subscription));
         await grant(MANAGER_USER_ID, subscription.id, ManageAccessId, AccessId);
         await grant(MEMBER_USER_ID, subscription.id, AccessId);
@@ -101,10 +82,10 @@ export const TestUserServiceSceneHelper = {
     // The second organization subscribes to the service instance and has a user service on it
     createOtherOrganizationRow: (instanceId: ServiceInstanceId) =>
       withCleanup(async (onCleanup) => {
-        const subscription = await createSubscription(
-          TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
-          instanceId
-        );
+        const subscription = await TestServiceHelper.subscription.create({
+          organization_id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+          service_instance_id: instanceId,
+        });
         onCleanup(() => deleteSubscription(subscription));
         const userService = await grant(
           TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.SIMPLE.ID,
@@ -123,10 +104,10 @@ export const TestUserServiceSceneHelper = {
         onCleanup(() =>
           TestServiceHelper.serviceInstance.delete({ id: serviceInstance.id })
         );
-        const subscription = await createSubscription(
-          TEST_ORGANIZATIONS.FILIGRAN.ID,
-          serviceInstance.id
-        );
+        const subscription = await TestServiceHelper.subscription.create({
+          organization_id: TEST_ORGANIZATIONS.FILIGRAN.ID,
+          service_instance_id: serviceInstance.id,
+        });
         onCleanup(() => deleteSubscription(subscription));
         const userService = await grant(
           TARGET_USER_ID,

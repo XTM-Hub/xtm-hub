@@ -23,5 +23,4 @@ type Mutation {
     language: Locale!
     input: EditSeoServiceInstanceInput!
   ): SeoServiceInstanceMetadata!
-    @auth(portalCapa: [BYPASS, MODIFY_SERVICE_METADATA])
 }

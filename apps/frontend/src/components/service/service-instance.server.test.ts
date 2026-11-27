@@ -56,6 +56,10 @@ describe('fetchServiceInstanceById', () => {
       case: 'is not visible to the visitor',
       code: 'SERVICE_INSTANCE_NOT_PUBLIC',
     },
+    {
+      case: 'is hidden or missing for the access guards',
+      code: 'NOT_FOUND',
+    },
   ])('should return null when the service instance $case', async ({ code }) => {
     // Given
     request.mockRejectedValue(new Error(code));

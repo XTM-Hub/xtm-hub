@@ -359,7 +359,7 @@ export const contextRegistererUserSecondOrga: PortalContext = {
     organization_capabilities: [
       {
         id: 14,
-        organization: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID,
+        organization: { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
         capabilities: ['MANAGE_PLATFORM_REGISTRATION'],
       },
     ],

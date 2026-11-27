@@ -42,6 +42,10 @@ export function buildCookieHeader(
   return cookieList.map((ck) => `${ck.name}=${ck.value}`).join('; ');
 }
 
+// The API's answer for a record that does not exist or that the caller cannot see. Copied from apps/backend/src, since
+// the frontend image is built from apps/frontend alone
+export const NOT_FOUND_ERROR_CODE = 'NOT_FOUND';
+
 export class UnauthenticatedError extends Error {
   constructor() {
     super('UNAUTHENTICATED');
