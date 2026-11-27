@@ -42,12 +42,12 @@ export const RequiredPlatformVersions: RequiredPlatformVersionsConfig = {
     [PlatformIdentifier.Xtmone]: null,
   },
   NewsFeedGithubReleaseSupport: {
-    [PlatformIdentifier.Opencti]: null,
+    [PlatformIdentifier.Opencti]: '7.260921.0',
     [PlatformIdentifier.Openaev]: null,
     [PlatformIdentifier.Xtmone]: null,
   },
   NewsFeedGithubReleaseLtsSupport: {
-    [PlatformIdentifier.Opencti]: null,
+    [PlatformIdentifier.Opencti]: '7.0.0-lts',
     [PlatformIdentifier.Openaev]: null,
     [PlatformIdentifier.Xtmone]: null,
   },
