@@ -25,9 +25,11 @@ import { createRelayIdScalar } from '../../../utils/scalar.util';
 import { extractId } from '../../../utils/utils';
 import { AuthHelper } from '../../security-management/capability/auth.helper';
 import {
-  extractPlatformId,
-  extractPlatformToken,
-} from '../../security-management/token/platform-token.util';
+  authenticatePlatform,
+  buildPlatformAuthenticationError,
+  isPlatformAuthenticationError,
+} from '../../security-management/token/platform-authentication.util';
+import { extractPlatformToken } from '../../security-management/token/platform-token.util';
 import { UserAdminApp } from './user-admin/user.admin.app';
 import { UserContactApp } from './user-contact/user-contact.app';
 import { UserDomain } from './user-domain/user.domain';
@@ -359,18 +361,33 @@ const resolvers: Resolvers = {
           return { success: true };
         }
 
-        // Without a Hub session, only a platform calling with its own id and token can send a message.
-        const headerPlatformId = extractPlatformId(portalContext.req);
-        if (!platformToken || !headerPlatformId) {
-          throw new Error(ErrorCode.InvalidPlatformToken);
+        // Without a Hub session, only a platform calling with its own assertion, or its own id and token, can send a
+        // message. The platform id argument is the Hub user's choice of trial: a platform is known by its headers.
+        const authentication = await authenticatePlatform(portalContext.req);
+        switch (authentication.outcome) {
+          case 'missing':
+            throw new Error(ErrorCode.InvalidPlatformToken);
+          case 'refused':
+            throw buildPlatformAuthenticationError(authentication.code);
+          case 'authenticated':
+            await UserContactApp.contactSalesFromPlatform({
+              message: message ?? undefined,
+              registration: authentication.match.registration,
+            });
+            return { success: true };
+          case 'token':
+            await UserContactApp.contactSalesFromPlatform({
+              message: message ?? undefined,
+              platformId: authentication.platformId,
+              platformToken: authentication.token,
+            });
+            return { success: true };
         }
-        await UserContactApp.contactSalesFromPlatform({
-          message: message ?? undefined,
-          platformId: headerPlatformId,
-          platformToken,
-        });
-        return { success: true };
       } catch (error) {
+        // Its own code tells the platform to reconnect: mapping it would leave only UNAUTHENTICATED.
+        if (isPlatformAuthenticationError(error)) {
+          throw error;
+        }
         throw mapToGraphQLError(error, UnknownErrorCode.HubspotError);
       }
     },

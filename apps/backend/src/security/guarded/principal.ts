@@ -10,14 +10,13 @@ import { UserLoadUserBy } from '../../model/user';
 import { UserDomain } from '../../modules/organization-management/user/user-domain/user.domain';
 import { AuthHelper } from '../../modules/security-management/capability/auth.helper';
 import {
-  PLATFORM_ID_HEADER,
-  PLATFORM_TOKEN_HEADER,
-} from '../../modules/security-management/token/platform-token.util';
+  authenticatePlatform,
+  buildPlatformAuthenticationError,
+} from '../../modules/security-management/token/platform-authentication.util';
 import { PLATFORM_USER_UUID, SYSTEM_USER_UUID } from '../../portal.const';
 import { logApp } from '../../utils/app-logger.util';
 import {
   isAcceptedPlatformMatch,
-  loadPlatformCredentialMatch,
   PlatformCredential,
   PlatformCredentialMatch,
 } from '../platform-credential';
@@ -114,22 +113,25 @@ export const requirePlatformCaller = <Credential extends PlatformCredential>(
   return platformCaller;
 };
 
-// A platform operation is judged on the platform headers alone, never on the session.
-// The lookup is shared with @platform_token and also matches an inactive registration or a deployment request in any
-// status: only the credential this operation requires, in a status it accepts, makes a platform caller
+// A platform operation is judged on the platform headers alone, never on the session: a signed assertion, else the
+// platform id and token. The token lookup is shared with @platform_token and also matches an inactive registration or
+// a deployment request in any status: only the credential this operation requires, in a status it accepts, makes a
+// platform caller
 export const buildPlatformPrincipal =
   (credential: PlatformCredential): PrincipalBuilder =>
   async (context) => {
-    const platformId = headerValue(context, PLATFORM_ID_HEADER);
-    const token = headerValue(context, PLATFORM_TOKEN_HEADER);
-    if (!platformId || !token) {
+    const authentication = await authenticatePlatform(context.req);
+    if (authentication.outcome === 'missing') {
       return ANONYMOUS_PRINCIPAL;
     }
+    // Thrown rather than answered UNAUTHENTICATED: the platform must learn that its assertion or its token is refused
+    // (PLATFORM_ASSERTION_INVALID, PLATFORM_KEY_MISMATCH, PLATFORM_TOKEN_REFUSED) to reconnect. `enforce` does not
+    // catch an error of the principal builder, so it reaches the client as it is.
+    if (authentication.outcome === 'refused') {
+      throw buildPlatformAuthenticationError(authentication.code);
+    }
 
-    const match = await loadPlatformCredentialMatch({
-      platform_id: platformId,
-      token,
-    });
+    const { match } = authentication;
     if (
       !match ||
       match.credential !== credential ||

@@ -1,12 +1,14 @@
-import express from 'express';
 import { GraphQLFieldResolver } from 'graphql';
 import { requestContext } from '../../../context/request.context';
 import { PortalContext } from '../../../model/portal-context';
-import { validateExistsPlatformAndToken } from '../../../modules/security-management/token/platform-token.util';
+import {
+  authenticatePlatform,
+  buildPlatformAuthenticationError,
+} from '../../../modules/security-management/token/platform-authentication.util';
+import { logApp } from '../../../utils/app-logger.util';
 import { ErrorCode } from '../../../utils/error/error.code';
 import { ForbiddenAccess } from '../../../utils/error/error.util';
 import { buildPlatformUser } from '../../machine-user';
-import { loadPlatformCredentialMatch } from '../../platform-credential';
 
 export {
   extractPlatformId,
@@ -29,26 +31,6 @@ const buildInvalidPlatformTokenError = () => {
   return error;
 };
 
-const loadOrganizationFromPlatformIdAndTokenHeaders = async (
-  req: express.Request
-) => {
-  const extractedAuth = validateExistsPlatformAndToken(req);
-  if (!extractedAuth) {
-    throw buildInvalidPlatformTokenError();
-  }
-
-  // An unregistered (inactive) registration no longer authenticates its platform. A Hub-deployed trial still does
-  // through its deployment request.
-  const match = await loadPlatformCredentialMatch({
-    ...extractedAuth,
-    activeOnly: true,
-  });
-  if (!match) {
-    throw buildInvalidPlatformTokenError();
-  }
-  return match.organization;
-};
-
 type ResolverArgumentValue =
   | string
   | number
@@ -64,12 +46,50 @@ type ResolverFn = GraphQLFieldResolver<
   Record<string, ResolverArgumentValue>
 >;
 
+const readInputPlatformId = (
+  args: Record<string, ResolverArgumentValue>
+): string | undefined => {
+  const { input } = args;
+  if (input === null || typeof input !== 'object' || Array.isArray(input)) {
+    return undefined;
+  }
+  const { platformId } = input;
+  return typeof platformId === 'string' ? platformId : undefined;
+};
+
+const loadAuthenticatedPlatformOrganization = async (
+  req: PortalContext['req'],
+  args: Record<string, ResolverArgumentValue>
+) => {
+  // An unregistered (inactive) registration no longer authenticates its platform. A Hub-deployed trial still does
+  // through its deployment request.
+  const authentication = await authenticatePlatform(req, {
+    input: { platformId: readInputPlatformId(args) },
+    activeOnly: true,
+  });
+  switch (authentication.outcome) {
+    case 'missing':
+      logApp.warn('[validatePlatformToken] Missing platform credentials');
+      throw buildInvalidPlatformTokenError();
+    case 'refused':
+      throw buildPlatformAuthenticationError(authentication.code);
+    case 'authenticated':
+      return authentication.match.organization;
+    case 'token':
+      if (!authentication.match) {
+        throw buildInvalidPlatformTokenError();
+      }
+      return authentication.match.organization;
+  }
+};
+
 export const createPlatformTokenResolver = (
   originalResolve: ResolverFn
 ): ResolverFn => {
   return async function secureResolver(source, args, portalContext, info) {
-    const organization = await loadOrganizationFromPlatformIdAndTokenHeaders(
-      portalContext.req
+    const organization = await loadAuthenticatedPlatformOrganization(
+      portalContext.req,
+      args
     );
     const platformUser = buildPlatformUser(organization);
 

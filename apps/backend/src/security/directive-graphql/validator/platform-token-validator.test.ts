@@ -1,6 +1,8 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { TestHelper } from '../../../../tests/helper/test.helper';
+import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
 import { requestContext } from '../../../context/request.context';
 import DeploymentRequest from '../../../model/kanel/public/DeploymentRequest';
 import Organization from '../../../model/kanel/public/Organization';
@@ -16,7 +18,10 @@ import {
   PLATFORM_ID_HEADER,
   PLATFORM_TOKEN_HEADER,
 } from '../../../modules/security-management/token/platform-token.util';
-import { ErrorCode } from '../../../utils/error/error.code';
+import {
+  ErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../../utils/error/error.code';
 import { ErrorType } from '../../../utils/error/error.type';
 import { createPlatformTokenResolver } from './platform-token-validator';
 
@@ -50,12 +55,13 @@ const runResolver = <T>(
     ctx: PortalContext,
     info: unknown
   ) => Promise<T>,
-  context: PortalContext
+  context: PortalContext,
+  args: unknown = {}
 ): Promise<T> =>
   new Promise<T>((resolve, reject) => {
     requestContext.run({ user: {} as UserLoadUserBy }, async () => {
       try {
-        resolve(await resolver({}, {}, context, {}));
+        resolve(await resolver({}, args, context, {}));
       } catch (error) {
         reject(error);
       }
@@ -245,5 +251,136 @@ describe('createPlatformTokenResolver', () => {
       // Then
       await expect(call).rejects.toMatchObject(INVALID_PLATFORM_TOKEN_ERROR);
     });
+  });
+});
+
+describe('createPlatformTokenResolver with a keyed registration', () => {
+  const cleanups: (() => Promise<void>)[] = [];
+
+  const givenKeyedCaller = async () => {
+    const caller = await TestHelper.keyedPlatformCaller.create();
+    cleanups.push(caller.cleanup);
+    return caller;
+  };
+
+  const assertionContext = (assertion: string) =>
+    makePortalContext(
+      TestHelper.keyedPlatformCaller.assertionHeaders(assertion)
+    );
+
+  const resolveSelectedOrganization = () =>
+    createPlatformTokenResolver(
+      vi.fn(async (_s, _a, ctx: PortalContext) => ctx.user)
+    );
+
+  const platformAuthenticationError = (code: UnauthenticatedErrorCode) => ({
+    message: code,
+    extensions: { code },
+  });
+
+  afterEach(async () => {
+    await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+  });
+
+  it('should run the resolver as the organization of the registration when the assertion is valid', async () => {
+    // Given
+    const keyed = await givenKeyedCaller();
+    const context = assertionContext(await keyed.sign());
+
+    // When
+    const user = await runResolver(resolveSelectedOrganization(), context);
+
+    // Then
+    expect(user.selected_organization_id).toBe(
+      TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+    );
+  });
+
+  it('should run every field of one request with its single assertion', async () => {
+    // Given
+    const keyed = await givenKeyedCaller();
+    const context = assertionContext(await keyed.sign());
+    await runResolver(resolveSelectedOrganization(), context);
+
+    // When
+    const user = await runResolver(resolveSelectedOrganization(), context);
+
+    // Then
+    expect(user.selected_organization_id).toBe(
+      TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID
+    );
+  });
+
+  it('should refuse with PLATFORM_ASSERTION_INVALID an assertion sent a second time', async () => {
+    // Given
+    const keyed = await givenKeyedCaller();
+    const assertion = await keyed.sign();
+    await runResolver(
+      resolveSelectedOrganization(),
+      assertionContext(assertion)
+    );
+    const resolverSpy = vi.fn();
+
+    // When
+    const call = runResolver(
+      createPlatformTokenResolver(resolverSpy),
+      assertionContext(assertion)
+    );
+
+    // Then
+    await expect(call).rejects.toMatchObject(
+      platformAuthenticationError(
+        UnauthenticatedErrorCode.PlatformAssertionInvalid
+      )
+    );
+    expect(resolverSpy).not.toHaveBeenCalled();
+  });
+
+  it('should refuse with PLATFORM_ASSERTION_INVALID an assertion of another platform than the input names', async () => {
+    // Given
+    const keyed = await givenKeyedCaller();
+    const context = assertionContext(await keyed.sign());
+
+    // When
+    const call = runResolver(resolveSelectedOrganization(), context, {
+      input: { platformId: uuidv4() },
+    });
+
+    // Then
+    await expect(call).rejects.toMatchObject(
+      platformAuthenticationError(
+        UnauthenticatedErrorCode.PlatformAssertionInvalid
+      )
+    );
+  });
+
+  it('should refuse with PLATFORM_TOKEN_REFUSED the token of a platform that enrolled a key', async () => {
+    // Given
+    const keyed = await givenKeyedCaller();
+    const context = makePortalContext({
+      [PLATFORM_ID_HEADER]: keyed.platformId,
+      [PLATFORM_TOKEN_HEADER]: uuidv4(),
+    });
+
+    // When
+    const call = runResolver(resolveSelectedOrganization(), context);
+
+    // Then
+    await expect(call).rejects.toMatchObject(
+      platformAuthenticationError(UnauthenticatedErrorCode.PlatformTokenRefused)
+    );
+  });
+
+  it('should still run the resolver for the token of a registration without key', async () => {
+    // Given
+    const platformCaller = await TestHelper.platformCaller.create();
+    cleanups.push(platformCaller.cleanup);
+    const context = makePortalContext(platformCaller.headers);
+
+    // When
+    const user = await runResolver(resolveSelectedOrganization(), context);
+
+    // Then
+    expect(user.selected_organization_id).toBe(platformCaller.organizationId);
   });
 });
