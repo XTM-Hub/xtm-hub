@@ -3,12 +3,12 @@ import { PortalSettings } from '@/components/settings/EnvPortalContext';
 import { readTrackedEvents, startAnalytics } from '@/utils/test/analytics';
 import { mswServer } from '@/utils/test/msw/server';
 import testRender from '@/utils/test/test-render';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   DocumentItemFragment,
   DocumentStatus,
   IncrementShareNumberDocumentMutation,
   IntegrationType,
+  ServiceInstanceItemFragment,
 } from '@graphql/generated';
 import { mockDefaultDocument } from '@graphql/mocks';
 import { screen, waitFor } from '@testing-library/react';
@@ -32,15 +32,20 @@ vi.mock('./one-click-deploy/OneClickDeploy', () => ({
   default: () => <div>OneClickDeployComponentMock</div>,
 }));
 
+const SERVICE_INSTANCE: ServiceInstanceItemFragment = {
+  id: 'service-instance-1',
+  name: 'Service',
+  description: null,
+  slug: null,
+  capabilities: [],
+  service_definition: null,
+};
+
 const mockSettings: Partial<PortalSettings> = {
   base_url_front: 'https://test.com',
 };
 
 describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
-  const serviceInstance = {
-    id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
-
   it.each`
     shouldShowOneClickComponent | documentType                  | documentStatus | integrationType
     ${true}                     | ${'opencti_custom_dashboard'} | ${'published'} | ${false}
@@ -73,7 +78,7 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
         <ShareableResourceSlug
           breadcrumbValue={[]}
           documentData={testDocumentData}
-          serviceInstance={serviceInstance}
+          serviceInstance={SERVICE_INSTANCE}
         />,
         { settings: mockSettings }
       );
@@ -90,10 +95,6 @@ describe('Component: ShareableResourceSlug - OneClickDeploy Logic', () => {
 });
 
 describe('Component: ShareableResourceSlug - Download', () => {
-  const serviceInstance = {
-    id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
-
   const renderSlug = (
     documentType: string,
     documentStatus: 'published' | 'draft'
@@ -111,7 +112,7 @@ describe('Component: ShareableResourceSlug - Download', () => {
             type: documentType,
           } as unknown as DocumentItemFragment
         }
-        serviceInstance={serviceInstance}
+        serviceInstance={SERVICE_INSTANCE}
       />,
       { settings: mockSettings }
     );
@@ -189,11 +190,7 @@ describe('Component: ShareableResourceSlug - Share', () => {
             type: 'opencti_custom_dashboard',
           } as unknown as DocumentItemFragment
         }
-        serviceInstance={
-          {
-            id: 'service-instance-1',
-          } as unknown as serviceInstance_fragment$data
-        }
+        serviceInstance={SERVICE_INSTANCE}
       />,
       { settings: mockSettings }
     );
@@ -212,10 +209,6 @@ describe('Component: ShareableResourceSlug - Share', () => {
 });
 
 describe('Component: ShareableResourceSlug - Share count refresh', () => {
-  const serviceInstance = {
-    id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
-
   const buildDocument = (id: string, shareNumber: number) =>
     ({
       id,
@@ -228,7 +221,7 @@ describe('Component: ShareableResourceSlug - Share count refresh', () => {
     <ShareableResourceSlug
       breadcrumbValue={[]}
       documentData={documentData}
-      serviceInstance={serviceInstance}
+      serviceInstance={SERVICE_INSTANCE}
     />
   );
 
@@ -328,10 +321,6 @@ describe('Component: ShareableResourceSlug - Share count refresh', () => {
 });
 
 describe('Component: ShareableResourceSlug - Download count refresh', () => {
-  const serviceInstance = {
-    id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
-
   const buildDocument = (id: string, downloadNumber: number) =>
     ({
       id,
@@ -346,7 +335,7 @@ describe('Component: ShareableResourceSlug - Download count refresh', () => {
     <ShareableResourceSlug
       breadcrumbValue={[]}
       documentData={documentData}
-      serviceInstance={serviceInstance}
+      serviceInstance={SERVICE_INSTANCE}
     />
   );
 
@@ -435,10 +424,6 @@ describe('Component: ShareableResourceSlug - Download count refresh', () => {
 });
 
 describe('Component: ShareableResourceSlug - Resource view', () => {
-  const serviceInstance = {
-    id: 'service-instance-1',
-  } as unknown as serviceInstance_fragment$data;
-
   const buildDocument = (status: DocumentStatus) =>
     ({
       id: 'document-1',
@@ -470,7 +455,7 @@ describe('Component: ShareableResourceSlug - Resource view', () => {
         <ShareableResourceSlug
           breadcrumbValue={[]}
           documentData={buildDocument(status)}
-          serviceInstance={serviceInstance}
+          serviceInstance={SERVICE_INSTANCE}
         />,
         { settings: mockSettings }
       );

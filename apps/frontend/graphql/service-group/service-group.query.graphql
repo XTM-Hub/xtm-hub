@@ -14,3 +14,14 @@ query BundleUserServiceGroups($serviceInstanceId: ServiceInstanceId!) {
 query BundleProducts($serviceInstanceId: ServiceInstanceId!) {
   bundleProducts(serviceInstanceId: $serviceInstanceId)
 }
+
+query ServiceGroups($serviceInstanceId: ServiceInstanceId!) {
+  serviceGroups(serviceInstanceId: $serviceInstanceId) {
+    id
+    name
+    users {
+      id
+      email
+    }
+  }
+}

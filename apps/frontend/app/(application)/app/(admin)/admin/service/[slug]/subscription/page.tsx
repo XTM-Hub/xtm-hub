@@ -1,5 +1,5 @@
 import GuardCapacityComponent from '@/components/AdminGuard';
-import PageLoader from './page-loader';
+import SubscriptionSlug from '@/components/subcription/[slug]/SubscriptionSlug';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ const Page = async ({ params }: PageProps) => {
   const id = decodeURIComponent(slug);
   return (
     <GuardCapacityComponent displayError>
-      <PageLoader id={id} />
+      <SubscriptionSlug subscriptionId={id} />
     </GuardCapacityComponent>
   );
 };

@@ -1,12 +1,27 @@
 import testRender from '@/utils/test/test-render';
-import { PortalCapability } from '@graphql/generated';
+import {
+  PortalCapability,
+  type ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import { screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Page from './page';
 
-vi.mock('./page-loader', () => ({
-  default: ({ id }: { id: string }) => <div>page-loader-{id}</div>,
+vi.mock('@/components/subcription/[slug]/SubscriptionSlug', () => ({
+  default: ({
+    subscriptionId,
+    serviceInstance,
+  }: {
+    subscriptionId: string;
+    serviceInstance?: ServiceInstanceItemFragment;
+  }) => (
+    <div>
+      subscription-{subscriptionId}-{serviceInstance?.name ?? 'admin'}
+    </div>
+  ),
 }));
+
+const SUBSCRIPTION_TEXT = 'subscription-my-slug-admin';
 
 const ADMIN_USER = { capabilities: [{ name: PortalCapability.Bypass }] };
 const STANDARD_USER = { capabilities: [] };
@@ -14,7 +29,7 @@ const renderPage = async () =>
   await Page({ params: Promise.resolve({ slug: 'my-slug' }) });
 
 describe('Admin service subscription page', () => {
-  it('should show the page to an administrator', async () => {
+  it('should show an administrator the users of the subscription without a service instance of its own', async () => {
     // Given
     const page = await renderPage();
 
@@ -22,7 +37,7 @@ describe('Admin service subscription page', () => {
     testRender(page, { me: ADMIN_USER });
 
     // Then
-    expect(screen.getByText('page-loader-my-slug')).toBeInTheDocument();
+    expect(screen.getByText(SUBSCRIPTION_TEXT)).toBeInTheDocument();
   });
 
   it('should tell a standard user that they are not authorized instead of showing the page', async () => {
@@ -34,6 +49,6 @@ describe('Admin service subscription page', () => {
 
     // Then
     expect(screen.getByText('Error.YouAreNotAuthorized')).toBeInTheDocument();
-    expect(screen.queryByText('page-loader-my-slug')).not.toBeInTheDocument();
+    expect(screen.queryByText(SUBSCRIPTION_TEXT)).not.toBeInTheDocument();
   });
 });

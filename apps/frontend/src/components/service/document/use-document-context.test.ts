@@ -9,13 +9,13 @@ import { requestGraphqlWithUploads } from '@/lib/graphql-upload-client';
 import revalidateDocumentSlugsAction from '@/utils/actions/revalidate-document-slugs.actions';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
 import { testRenderHook } from '@/utils/test/test-render';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import {
   DocumentCreateDocument,
   DocumentDeleteDocument,
   DocumentItemFragment,
   DocumentStatus,
   DocumentUpdateDocument,
+  ServiceInstanceItemFragment,
 } from '@graphql/generated';
 import { waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,10 +50,14 @@ vi.mock('@/components/service/document/document-query-invalidation', () => ({
   invalidateDocumentQueriesAfterDelete: vi.fn(),
 }));
 
-const serviceInstance = {
+const serviceInstance: ServiceInstanceItemFragment = {
   id: SERVICE_INSTANCE_ID,
+  name: 'Service',
+  description: null,
   slug: SERVICE_INSTANCE_SLUG,
-} as serviceInstance_fragment$data;
+  capabilities: [],
+  service_definition: null,
+};
 
 const existingDocument = {
   id: DOCUMENT_ID,

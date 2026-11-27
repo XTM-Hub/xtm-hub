@@ -3,12 +3,15 @@ import {
   ServiceFormValues,
 } from '@/components/service/components/subscribable-services.types';
 import { ShareableResourceType } from '@/utils/shareable-resources/shareable-resources.types';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
-import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 import React, { createContext, useContext } from 'react';
 
 export interface ServiceContextProps {
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
   translationKey: string;
   handleAddSheet: (
     values: ServiceFormValues,

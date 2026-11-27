@@ -16,6 +16,7 @@ export interface TeamsNotificationPayloadMap {
   };
   resource_not_published: {
     library: string;
+    total_by_status: { draft: number; in_validation: number };
     resources: TeamsResourceItem[];
   };
 }

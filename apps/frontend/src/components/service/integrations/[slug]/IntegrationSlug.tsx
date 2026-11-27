@@ -13,16 +13,19 @@ import {
   ShareableResourceType,
 } from '@/utils/shareable-resources/shareable-resources.types';
 import { docHasMetadata } from '@/utils/shareable-resources/utils/shareable-resources.client.utils';
-import { DocumentItemFragment, IntegrationType } from '@graphql/generated';
+import {
+  DocumentItemFragment,
+  IntegrationType,
+  ServiceInstanceItemFragment,
+} from '@graphql/generated';
 
 import { useDocumentContext } from '@/components/service/document/use-document-context';
-import { serviceInstance_fragment$data } from '@generated/serviceInstance_fragment.graphql';
 import { useContext, useEffect } from 'react';
 
 // Component interface
 interface IntegrationSlugProps {
   documentData: DocumentItemFragment;
-  serviceInstance: serviceInstance_fragment$data;
+  serviceInstance: ServiceInstanceItemFragment;
 }
 
 // Component

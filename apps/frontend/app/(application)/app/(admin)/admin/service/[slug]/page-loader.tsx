@@ -3,20 +3,19 @@ import {
   OrderingMode,
   SubscriptionFilterKey,
   SubscriptionOrdering,
+  useServiceInstanceWithCapabilitiesByIdQuery,
   useSubscriptionsListQuery,
 } from '@graphql/generated';
 
 import Loader from '@/components/Loader';
 import ServiceSlug from '@/components/service/[slug]/ServiceSlug';
-
-import { ServiceInstanceByIdQuery } from '@/components/service/service.graphql';
-import useMountingLoader from '@/hooks/use-mounting-loader';
 import { portalGraphqlClient } from '@/lib/graphql-client';
 import { throwOnFirstLoadError } from '@/lib/query-client';
-import { serviceInstanceByIdQuery } from '@generated/serviceInstanceByIdQuery.graphql';
+import { serviceInstanceWithCapabilitiesKeys } from '@graphql/service-instances/service-instances.keys';
 import { subscriptionKeys } from '@graphql/subscription/subscription.keys';
 import { useMemo } from 'react';
-import { useQueryLoader } from 'react-relay';
+
+const SERVICE_SUBSCRIPTIONS_PAGE_SIZE = 50;
 
 // Component interface
 interface PreloaderProps {
@@ -25,13 +24,25 @@ interface PreloaderProps {
 
 // Component
 const PageLoader = ({ id }: PreloaderProps) => {
-  const [queryRefServiceInstance, loadQuery] =
-    useQueryLoader<serviceInstanceByIdQuery>(ServiceInstanceByIdQuery);
-  useMountingLoader(loadQuery, { service_instance_id: id });
+  const serviceInstanceVariables = useMemo(
+    () => ({ service_instance_id: id }),
+    [id]
+  );
+  const { data: serviceInstanceData } =
+    useServiceInstanceWithCapabilitiesByIdQuery(
+      portalGraphqlClient,
+      serviceInstanceVariables,
+      {
+        queryKey: serviceInstanceWithCapabilitiesKeys.byId(
+          serviceInstanceVariables
+        ),
+        throwOnError: throwOnFirstLoadError,
+      }
+    );
 
   const variables = useMemo(
     () => ({
-      count: 50,
+      count: SERVICE_SUBSCRIPTIONS_PAGE_SIZE,
       cursor: null,
       orderBy: SubscriptionOrdering.StartDate,
       orderMode: OrderingMode.Asc,
@@ -55,17 +66,17 @@ const PageLoader = ({ id }: PreloaderProps) => {
     [data]
   );
 
+  // The API answers an unknown service instance with an error, never `null`.
+  const serviceInstance = serviceInstanceData?.serviceInstanceById;
+  if (!serviceInstance || !subscriptions) {
+    return <Loader />;
+  }
+
   return (
-    <>
-      {queryRefServiceInstance && subscriptions ? (
-        <ServiceSlug
-          subscriptions={subscriptions}
-          queryRefServiceInstance={queryRefServiceInstance}
-        />
-      ) : (
-        <Loader />
-      )}
-    </>
+    <ServiceSlug
+      subscriptions={subscriptions}
+      serviceInstance={serviceInstance}
+    />
   );
 };
 

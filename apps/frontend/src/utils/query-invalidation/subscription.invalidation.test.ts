@@ -1,4 +1,4 @@
-import { invalidateSubscriptionQueries } from '@/components/subcription/subscription.invalidation';
+import { invalidateSubscriptionQueries } from '@/utils/query-invalidation/subscription.invalidation';
 import {
   OrderingMode,
   SubscriptionOrdering,

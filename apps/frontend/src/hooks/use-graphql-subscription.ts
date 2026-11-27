@@ -13,7 +13,10 @@ import { useEffect, useRef } from 'react';
 
 export interface GraphqlSubscriptionOptions<TData> {
   onNext: (data: TData) => void;
-  /** Replaces the default report of an error; never called for an expired session. */
+  /**
+   * Replaces the default report of an error; never called for an expired
+   * session. Also called for a transport error, which is otherwise not reported.
+   */
   onError?: (error: Error) => void;
   enabled?: boolean;
 }
@@ -36,7 +39,10 @@ const reportError = (operationLabel: string, error: Error) => {
  * The react-query counterpart of Relay's `useSubscription`: the data is handed
  * to `onNext`, not cached, so the caller updates the react-query cache itself.
  * A transport error only arrives once graphql-sse has given up reconnecting,
- * and the subscription then stays closed until its inputs change.
+ * and the subscription then stays closed until its inputs change. That is a
+ * connection that closed (network loss, page navigation, a proxy answering 400
+ * or 404), not a defect of the page, so it is handed to `onError` but never
+ * reported to the API as an error.
  */
 export const useGraphqlSubscription = <
   TData,
@@ -66,7 +72,7 @@ export const useGraphqlSubscription = <
     const operationName = findOperationName(document);
     const operationLabel = extractOperationName(document);
 
-    const handleError = (error: unknown) => {
+    const handleError = (error: unknown, isTransportError = false) => {
       // Same handling as the QueryClient: an expired session goes to the login
       // page, and the caller's own error handling does not run.
       if (error instanceof UnauthenticatedError) {
@@ -75,7 +81,9 @@ export const useGraphqlSubscription = <
       }
       const normalizedError = toError(error);
       if (!onErrorRef.current) {
-        reportError(operationLabel, normalizedError);
+        if (!isTransportError) {
+          reportError(operationLabel, normalizedError);
+        }
         return;
       }
       // Same reason as for onNext below: an exception must never escape the
@@ -108,7 +116,7 @@ export const useGraphqlSubscription = <
             handleError(error);
           }
         },
-        error: handleError,
+        error: (error) => handleError(error, true),
         // Required by Sink; nothing to do when the API ends the subscription.
         complete: () => {},
       }

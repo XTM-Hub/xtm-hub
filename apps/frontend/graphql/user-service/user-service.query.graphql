@@ -1,0 +1,55 @@
+fragment UserServiceItem on UserService {
+  id
+  user {
+    id
+    first_name
+    last_name
+    email
+  }
+  subscription {
+    service_instance {
+      id
+      name
+      service_definition {
+        identifier
+      }
+    }
+  }
+  user_service_capability {
+    id
+    generic_service_capability {
+      id
+      name
+    }
+    subscription_capability {
+      id
+      service_capability {
+        id
+        name
+      }
+    }
+  }
+}
+
+query UserServicesFromSubscription(
+  $count: Int!
+  $cursor: ID
+  $orderBy: UserServiceOrdering!
+  $orderMode: OrderingMode!
+  $subscriptionId: SubscriptionId!
+) {
+  userServiceFromSubscription(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    subscription_id: $subscriptionId
+  ) {
+    totalCount
+    edges {
+      node {
+        ...UserServiceItem
+      }
+    }
+  }
+}

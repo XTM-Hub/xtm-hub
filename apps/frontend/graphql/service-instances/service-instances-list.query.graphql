@@ -71,3 +71,89 @@ query ServiceInstanceSeoMetadataById($service_instance_id: ServiceInstanceId!) {
     ...SeoServiceInstanceMetadataItem
   }
 }
+
+fragment ServiceInstanceItem on ServiceInstance {
+  id
+  name
+  description
+  slug
+  capabilities
+  service_definition {
+    identifier
+  }
+}
+
+query ServiceInstanceById($service_instance_id: ServiceInstanceId!) {
+  serviceInstanceById(service_instance_id: $service_instance_id) {
+    ...ServiceInstanceItem
+  }
+}
+
+fragment ServiceInstanceWithCapabilitiesItem on ServiceInstance {
+  id
+  name
+  description
+  tags
+  service_definition {
+    service_capability {
+      id
+      description
+      name
+    }
+  }
+}
+
+query ServiceInstanceWithCapabilitiesById(
+  $service_instance_id: ServiceInstanceId!
+) {
+  serviceInstanceById(service_instance_id: $service_instance_id) {
+    ...ServiceInstanceWithCapabilitiesItem
+  }
+}
+
+fragment AdminServiceInstanceItem on ServiceInstance {
+  id
+  name
+  description
+  creation_status
+  capabilities
+  public
+  tags
+  links {
+    name
+    url
+  }
+  service_definition {
+    id
+    name
+    identifier
+  }
+  logo_document_id
+  illustration_document_id
+  slug
+  ordering
+}
+
+query AdminServiceInstancesList(
+  $count: Int!
+  $orderBy: ServiceInstanceOrdering!
+  $orderMode: OrderingMode!
+  $filters: [ServiceInstanceFilter!]
+  $searchTerm: String
+  $includeInaccessible: Boolean
+) {
+  serviceInstances(
+    first: $count
+    orderBy: $orderBy
+    orderMode: $orderMode
+    filters: $filters
+    searchTerm: $searchTerm
+    includeInaccessible: $includeInaccessible
+  ) {
+    edges {
+      node {
+        ...AdminServiceInstanceItem
+      }
+    }
+  }
+}
