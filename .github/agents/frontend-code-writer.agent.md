@@ -25,7 +25,7 @@ performance bottlenecks and security weaknesses before delivering it.
 
 ## Data Layer Rules
 Follow [`frontend.md`](../../.claude/rules/frontend.md#data-fetching) for the react-query-first
-policy, the Relay migration expectations, and when to skip a migration and say so explicitly.
+policy.
 
 ## Analytics Rules
 Follow [`frontend.md`](../../.claude/rules/frontend.md#analytics-ga4) for the analytics ID of every clickable

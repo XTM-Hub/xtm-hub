@@ -30,5 +30,5 @@ stack-specific rules on top.
 - When code you're touching already has a comment, update it in place instead of adding a new one alongside it.
   A stale comment left next to a fresh one is worse than no comment; if the old one no longer applies, rewrite or
   remove it rather than layering on more text.
-- Never use `as never` — it disables all type-checking entirely and is always forbidden. Use the actual declared type, a proper generated type (e.g. from `@generated/`), or `Partial<T>` with explicit justification. Never use `as never` even in tests.
+- Never use `as never` — it disables all type-checking entirely and is always forbidden. Use the actual declared type, a proper generated type (e.g. from `@graphql/generated`), or `Partial<T>` with explicit justification. Never use `as never` even in tests.
 - Never use as type casts unless strictly necessary and explicitly justified. Prefer proper typing over casting.
