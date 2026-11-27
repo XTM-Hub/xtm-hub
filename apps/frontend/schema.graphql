@@ -211,7 +211,18 @@ type Mutation {
   updateVotableFeature(id: VotableFeatureId!, input: UpdateVotableFeatureInput!, document: [Upload!]): VotableFeature!
   deleteVotableFeature(id: VotableFeatureId!): VotableFeature!
   frontendErrorLog(message: String!, codeStack: String, componentStack: String): Boolean
-  newProductVersion(product: PlatformIdentifier!, version: String!): Success!
+  newProductVersion(
+    product: PlatformIdentifier!
+    version: String!
+
+    """
+    Publication date of the release (the `published_at` of the GitHub release),
+    used as the creation date of its news feed item. An ISO 8601 date-time with
+    an explicit `Z` or `±hh:mm` offset, not more than 5 minutes ahead of the
+    Hub's clock. Defaults to the time of the call.
+    """
+    releasedAt: Date
+  ): Success!
   consumeProvisionedNewsFeedItems: ConsumeProvisionedNewsFeedItemsResponse!
   deleteNewsFeedItem(id: NewsFeedItemId!): Boolean!
   addOrganization(input: OrganizationInput!): Organization

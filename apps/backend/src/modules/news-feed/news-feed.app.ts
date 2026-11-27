@@ -475,9 +475,11 @@ export const NewsFeedApp = {
   createGithubReleaseNewsFeedItem: async ({
     product,
     version,
+    releasedAt,
   }: {
     product: PlatformIdentifier;
     version: string;
+    releasedAt?: Date;
   }): Promise<void> => {
     if (githubReleaseRepositoryMapping[product] === undefined) {
       return;
@@ -499,6 +501,7 @@ export const NewsFeedApp = {
           platformIdentifier: product,
           title: `${PlatformIdentifierToString[product]} ${version}`,
           productVersion: version,
+          creationDate: releasedAt,
         }
       );
 

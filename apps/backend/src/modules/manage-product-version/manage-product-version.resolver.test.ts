@@ -16,6 +16,7 @@ import { ManageProductVersionApp } from './manage-product-version.app';
 import resolvers from './manage-product-version.resolver';
 
 const OPENCTI_LTS_VERSION = '7.260309.0-lts.8';
+const RELEASED_AT = '2026-11-18T10:00:00Z';
 const SEARCH_TERM = '7.0';
 const REGISTERED_VERSIONS: ProductVersion[] = [
   {
@@ -33,6 +34,33 @@ describe('manageProductVersionResolver', () => {
   });
 
   describe('mutation.newProductVersion', () => {
+    it('should forward the release date as sent to the app when it is provided', async () => {
+      // Given
+      const handleNewProductVersionSpy = vi
+        .spyOn(ManageProductVersionApp, 'handleNewProductVersion')
+        .mockResolvedValue(undefined);
+
+      // When
+      const result = await resolvers.Mutation!.newProductVersion!(
+        {},
+        {
+          product: PlatformIdentifier.Opencti,
+          version: OPENCTI_LTS_VERSION,
+          releasedAt: RELEASED_AT,
+        },
+        contextSystemToken,
+        GRAPHQL_RESOLVE_INFO
+      );
+
+      // Then
+      expect(result).toEqual({ success: true });
+      expect(handleNewProductVersionSpy).toHaveBeenCalledWith({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_LTS_VERSION,
+        releasedAt: RELEASED_AT,
+      });
+    });
+
     it('should reject with the error code of the app when the app throws a bad request error', async () => {
       // Given
       vi.spyOn(

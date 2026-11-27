@@ -416,6 +416,7 @@
       "INVALID_PLATFORM_ID": "An unknown error occurred",
       "INVALID_PLATFORM_IDENTIFIER": "Platform identifier is invalid",
       "INVALID_PLATFORM_VERSION": "Invalid platform version",
+      "INVALID_RELEASE_DATE": "Invalid release date",
       "INVALID_SSO_GROUP_ROLE_PORTAL": "Invalid SSO group or role",
       "INVALID_ROLE_PORTAL": "Invalid role",
       "IS_PLATFORM_REGISTERED_UNKNOWN_ERROR": "An unknown error occurred during product connection",

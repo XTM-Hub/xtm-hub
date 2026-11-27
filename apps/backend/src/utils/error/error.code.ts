@@ -72,6 +72,7 @@ export enum BadRequestErrorCode {
   DeploymentRequestStatusUpdateNotAllowed = 'DEPLOYMENT_REQUEST_STATUS_UPDATE_NOT_ALLOWED',
   InvalidPlatformId = 'INVALID_PLATFORM_ID',
   InvalidPlatformVersion = 'INVALID_PLATFORM_VERSION',
+  InvalidReleaseDate = 'INVALID_RELEASE_DATE',
   ServiceGroupsLinkedToMultipleServiceInstances = 'SERVICE_GROUPS_LINKED_TO_MULTIPLE_SERVICE_INSTANCES',
   OrganizationDoesNotMatchSelectedOrganization = 'ORGANIZATIONS_DOES_NOT_MATCH_SELECTED_ORGANIZATION',
   DeploymentRequestHubStatusNotQueued = 'DEPLOYMENT_REQUEST_HUB_STATUS_NOT_QUEUED',

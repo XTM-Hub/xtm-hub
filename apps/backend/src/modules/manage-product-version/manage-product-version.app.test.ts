@@ -20,6 +20,9 @@ const OPENAEV_VERSION = '3.261104.0';
 const OPENAEV_LTS_VERSION = '3.260309.0-lts.8';
 const OPENCTI_VERSION = '6.4.0';
 const OPENCTI_LTS_VERSION = '7.260309.0-lts.8';
+const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
+const FROZEN_NOW = new Date('2026-11-18T10:00:00.000Z').getTime();
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 describe('manageProductVersionApp', () => {
   describe('handleNewProductVersion for OpenAEV', () => {
@@ -249,6 +252,175 @@ describe('manageProductVersionApp', () => {
         )
       );
     });
+
+    it.each([
+      ['a non-LTS', OPENCTI_VERSION],
+      ['an LTS', OPENCTI_LTS_VERSION],
+    ])(
+      'should forward the release date as a Date to the news feed item creation when the version is %s',
+      async (_description, version) => {
+        // When
+        await ManageProductVersionApp.handleNewProductVersion({
+          product: PlatformIdentifier.Opencti,
+          version,
+          releasedAt: '2026-11-18T10:00:00Z',
+        });
+
+        // Then
+        expect(createGithubReleaseNewsFeedItemSpy).toHaveBeenCalledWith({
+          product: PlatformIdentifier.Opencti,
+          version,
+          releasedAt: new Date('2026-11-18T10:00:00.000Z'),
+        });
+      }
+    );
+
+    it.each([
+      [
+        'without fractional seconds',
+        '2026-11-18T10:00:41Z',
+        '2026-11-18T10:00:41.000Z',
+      ],
+      [
+        'with fractional seconds',
+        '2026-11-18T10:00:41.123Z',
+        '2026-11-18T10:00:41.123Z',
+      ],
+      [
+        'with an offset',
+        '2026-11-18T10:00:00+02:00',
+        '2026-11-18T08:00:00.000Z',
+      ],
+      ['at the epoch', '1970-01-01T00:00:00Z', '1970-01-01T00:00:00.000Z'],
+      ['on a leap day', '2024-02-29T10:00:00Z', '2024-02-29T10:00:00.000Z'],
+    ])(
+      'should accept a release date %s and give the matching instant',
+      async (_description, releasedAt, expectedInstant) => {
+        // When
+        await ManageProductVersionApp.handleNewProductVersion({
+          product: PlatformIdentifier.Opencti,
+          version: OPENCTI_LTS_VERSION,
+          releasedAt,
+        });
+
+        // Then
+        expect(createGithubReleaseNewsFeedItemSpy).toHaveBeenCalledWith({
+          product: PlatformIdentifier.Opencti,
+          version: OPENCTI_LTS_VERSION,
+          releasedAt: new Date(expectedInstant),
+        });
+      }
+    );
+
+    it.each([
+      ['absent', undefined],
+      ['null', null],
+    ])(
+      'should call the news feed item creation without a date when the release date is %s',
+      async (_description, releasedAt) => {
+        // When
+        await ManageProductVersionApp.handleNewProductVersion({
+          product: PlatformIdentifier.Opencti,
+          version: OPENCTI_LTS_VERSION,
+          releasedAt,
+        });
+
+        // Then
+        expect(createGithubReleaseNewsFeedItemSpy).toHaveBeenCalledTimes(1);
+        expect(
+          createGithubReleaseNewsFeedItemSpy.mock.calls[0]![0].releasedAt
+        ).toBeUndefined();
+      }
+    );
+
+    it.each([
+      ['a second', 1000],
+      ['exactly 5 minutes', MAX_CLOCK_SKEW_MS],
+    ])(
+      'should accept a release date %s ahead of the clock and forward it as given',
+      async (_description, aheadMs) => {
+        // Given
+        vi.spyOn(Date, 'now').mockReturnValue(FROZEN_NOW);
+        const releasedAt = new Date(FROZEN_NOW + aheadMs);
+
+        // When
+        await ManageProductVersionApp.handleNewProductVersion({
+          product: PlatformIdentifier.Opencti,
+          version: OPENCTI_LTS_VERSION,
+          releasedAt: releasedAt.toISOString(),
+        });
+
+        // Then
+        expect(createGithubReleaseNewsFeedItemSpy).toHaveBeenCalledWith({
+          product: PlatformIdentifier.Opencti,
+          version: OPENCTI_LTS_VERSION,
+          releasedAt,
+        });
+      }
+    );
+
+    it('should reject the release date and create nothing when it is 5 minutes and 1 ms ahead of the clock', async () => {
+      // Given
+      vi.spyOn(Date, 'now').mockReturnValue(FROZEN_NOW);
+
+      // When
+      const call = ManageProductVersionApp.handleNewProductVersion({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_VERSION,
+        releasedAt: new Date(FROZEN_NOW + MAX_CLOCK_SKEW_MS + 1).toISOString(),
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.InvalidReleaseDate
+      );
+      await expectNothingCreated();
+    });
+
+    it('should reject the release date and create nothing when it is a day ahead of the clock', async () => {
+      // When
+      const call = ManageProductVersionApp.handleNewProductVersion({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_VERSION,
+        releasedAt: new Date(Date.now() + ONE_DAY_MS).toISOString(),
+      });
+
+      // Then
+      await expect(call).rejects.toThrow(
+        BadRequestErrorCode.InvalidReleaseDate
+      );
+      await expectNothingCreated();
+    });
+
+    it.each([
+      ['not a date', 'not-a-date'],
+      ['an empty string', ''],
+      ['a date without a time zone', '2026-11-18T10:00:00'],
+      ['a date without a time', '2026-11-18'],
+      ['a day that does not exist in its month', '2026-02-31T10:00:00Z'],
+      ['a leap day in a year that is not a leap year', '2026-02-29T10:00:00Z'],
+      ['an hour of 24', '2026-11-18T24:00:00Z'],
+      ['a minute of 60', '2026-11-18T10:60:00Z'],
+      ['a number', 123],
+      ['a boolean', true],
+      ['an object', {}],
+    ])(
+      'should reject the release date and create nothing when it is %s',
+      async (_description, releasedAt) => {
+        // When
+        const call = ManageProductVersionApp.handleNewProductVersion({
+          product: PlatformIdentifier.Opencti,
+          version: OPENCTI_VERSION,
+          releasedAt,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          BadRequestErrorCode.InvalidReleaseDate
+        );
+        await expectNothingCreated();
+      }
+    );
   });
 
   describe('registerProductVersion', () => {

@@ -15,8 +15,8 @@ headers {
 }
 
 body:graphql {
-  mutation NewProductVersion($product: PlatformIdentifier!, $version: String!) {
-    newProductVersion(product: $product, version: $version) {
+  mutation NewProductVersion($product: PlatformIdentifier!, $version: String!, $releasedAt: Date) {
+    newProductVersion(product: $product, version: $version, releasedAt: $releasedAt) {
       success
     }
   }
@@ -25,7 +25,8 @@ body:graphql {
 body:graphql:vars {
   {
     "product": "opencti",
-    "version": "6.260409.0"
+    "version": "6.260409.0",
+    "releasedAt": "2026-04-09T10:15:30Z"
   }
 }
 
@@ -40,9 +41,15 @@ docs {
   Fill variables:
   product: PlatformIdentifier enum value (e.g. opencti, openaev)
   version: product version, e.g. 6.4.0, or an LTS version, e.g. 7.260309.0-lts.8
+  releasedAt (optional): publication date of the release, the published_at of the GitHub release, e.g.
+  2026-04-09T10:15:30Z. ISO 8601 date-time with an explicit Z or +hh:mm offset, fractional seconds allowed. Used as the
+  creation date of the news feed item. Absent or null: the time of the call.
   
   Behaviour:
   - Any invalid version is rejected (INVALID_PLATFORM_VERSION), LTS or not. The LTS suffix must be lowercase (-lts.N).
+  - A releasedAt more than 5 minutes ahead of the Hub's clock, not a string, or not an ISO 8601 date-time with a time
+    zone is rejected (INVALID_RELEASE_DATE), for every product and version. Nothing is done: no manifest generation,
+    no registration, no news feed item. A date up to 5 minutes ahead is accepted and stored as given.
   - For opencti, a non-LTS version requests the connector manifest generation and registers the version. An LTS
     version (-lts.N suffix) skips both.
   - For openaev, never a manifest generation nor a registration, whatever the version. Example: product openaev,
@@ -51,5 +58,6 @@ docs {
     and version (a later call with the same version does nothing, even once the item is deleted), provisioned to
     the active platforms of that product on the same release track (LTS or not) whose version passes the gate of
     that track. It redirects to the release tag of the GitHub repository of the product. This step runs in the
-    background and never fails the mutation.
+    background and never fails the mutation. Its creation date is releasedAt, or the time of the call when absent.
+    A later call for an existing version ignores releasedAt: the date of the existing item is not updated.
 }
