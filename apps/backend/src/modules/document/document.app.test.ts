@@ -1499,6 +1499,7 @@ describe('documentApp', () => {
         event: 'resource_not_published',
         payload: {
           library: integrationsDefinition!.name,
+          total_by_status: { draft: 1, in_validation: 1 },
           resources: [
             {
               name: 'Feed draft',
@@ -1523,6 +1524,7 @@ describe('documentApp', () => {
         event: 'resource_not_published',
         payload: {
           library: dashboardsDefinition!.name,
+          total_by_status: { draft: 0, in_validation: 1 },
           resources: [
             {
               name: 'Dashboard in validation',
@@ -1533,6 +1535,35 @@ describe('documentApp', () => {
               author_email: OTHER_AUTHOR.EMAIL,
             },
           ],
+        },
+      });
+    });
+
+    it('should send the real total of a status while listing only its 5 oldest resources', async () => {
+      // Given 7 drafts in one library
+      await Promise.all(
+        Array.from({ length: 7 }, (_, index) =>
+          createNotPublished({
+            name: `draft-${index}`,
+            status: DocumentStatus.Draft,
+            serviceInstanceId: SERVICES.INSTANCES.CUSTOM_DASHBOARDS.ID,
+            type: OPENCTI_CUSTOM_DASHBOARD_DOCUMENT_TYPE,
+            createdAt: new Date(Date.UTC(2026, 0, index + 1)),
+          })
+        )
+      );
+
+      // When
+      await DocumentApp.sendResourceNotPublishedReminder();
+
+      // Then
+      expect(sendSpy).toHaveBeenCalledOnce();
+      expect(sendSpy.mock.calls[0]?.[1]).toMatchObject({
+        payload: {
+          total_by_status: { draft: 7, in_validation: 0 },
+          resources: [0, 1, 2, 3, 4].map((index) => ({
+            name: `draft-${index}`,
+          })),
         },
       });
     });

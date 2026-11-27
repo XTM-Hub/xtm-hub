@@ -240,6 +240,10 @@ export interface NotPublishedResourceInput {
 export interface NotPublishedLibrary {
   serviceDefinition: NotPublishedResource['serviceDefinition'];
   resources: NotPublishedResourceInput[];
+  totalByStatus: Record<
+    DocumentStatus.Draft | DocumentStatus.InValidation,
+    number
+  >;
 }
 
 const buildResourceItem = ({
@@ -422,11 +426,22 @@ export const DocumentHelper = {
     );
 
     const libraries = new Map<string, NotPublishedLibrary>();
-    for (const { document, serviceDefinition } of notPublished) {
+    for (const { document, serviceDefinition, statusTotal } of notPublished) {
       const library = libraries.get(serviceDefinition.id) ?? {
         serviceDefinition,
         resources: [],
+        totalByStatus: {
+          [DocumentStatus.Draft]: 0,
+          [DocumentStatus.InValidation]: 0,
+        },
       };
+      if (
+        document.status === DocumentStatus.Draft ||
+        document.status === DocumentStatus.InValidation
+      ) {
+        // same value on every row of a library and status: window count over that partition
+        library.totalByStatus[document.status] = statusTotal;
+      }
       library.resources.push({
         document,
         integrationType: DocumentHelper.toIntegrationType(
@@ -466,11 +481,17 @@ export const DocumentHelper = {
   buildNotPublishedPayload: ({
     serviceDefinition,
     resources,
+    totalByStatus,
   }: {
     serviceDefinition: Pick<ServiceDefinition, 'name' | 'identifier'>;
     resources: NotPublishedResourceInput[];
+    totalByStatus: NotPublishedLibrary['totalByStatus'];
   }): TeamsNotificationPayloadMap['resource_not_published'] => ({
     library: serviceDefinition.name,
+    total_by_status: {
+      draft: totalByStatus[DocumentStatus.Draft],
+      in_validation: totalByStatus[DocumentStatus.InValidation],
+    },
     resources: resources.map(({ document, integrationType, authorEmail }) =>
       buildResourceItem({
         document,
