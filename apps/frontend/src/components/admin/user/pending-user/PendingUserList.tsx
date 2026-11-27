@@ -219,7 +219,6 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
               <IconButton
                 variant="destructive"
                 priority="tertiary"
-                className="border"
                 {...analyticsId('organization_join_request_delete')}
                 aria-label={t('PendingUserListPage.Reject')}
                 icon={<CloseIcon className="h-4 w-4" />}
@@ -227,7 +226,6 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
               />
               <IconButton
                 priority="tertiary"
-                className="border"
                 {...analyticsId('organization_join_request_confirm')}
                 aria-label={t('PendingUserListPage.Approve')}
                 icon={<CheckIcon className="h-4 w-4" />}
@@ -296,7 +294,6 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                     <IconButton
                       variant="destructive"
                       priority="tertiary"
-                      className="border"
                       {...analyticsId('organization_join_requests_delete')}
                       aria-label={t('PendingUserListPage.Reject')}
                       icon={<CloseIcon className="h-4 w-4" />}
@@ -314,7 +311,6 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
                   trigger={
                     <IconButton
                       priority="tertiary"
-                      className="border"
                       {...analyticsId('organization_join_requests_confirm')}
                       aria-label={t('PendingUserListPage.Approve')}
                       icon={<CheckIcon className="h-4 w-4" />}

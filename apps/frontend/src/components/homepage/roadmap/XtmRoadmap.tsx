@@ -77,8 +77,7 @@ const XtmRoadmap = async ({
         <div>
           <Button
             asChild
-            priority="secondary"
-            className="border-elevation-default">
+            priority="secondary">
             <Link
               {...analyticsId('home_roadmap_open')}
               href={seeMoreHref ?? defaultSeeMoreHref}
