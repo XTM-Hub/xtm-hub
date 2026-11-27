@@ -22,7 +22,7 @@ export interface UseTablePaginationParams {
   normalizePageSize?: (size: number) => number;
   /**
    * Called after the internal pagination state has been updated. Callers that need to
-   * trigger a refetch (Relay `refetch`, GraphQL query variables, ...) should do so here.
+   * trigger a refetch (a manual `refetch`, GraphQL query variables, ...) should do so here.
    * Callers whose data-fetching already reacts to pagination state (e.g. react-query hooks
    * reading `pagination` from a `useMemo`) can omit this.
    */

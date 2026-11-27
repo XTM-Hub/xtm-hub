@@ -136,8 +136,8 @@ const sendDeletionEvents = (count: number) =>
 const runPendingTimers = () =>
   act(() => vi.advanceTimersByTimeAsync(INVALIDATION_BATCH_MAX_WAIT_MS));
 
-// The fake timers are moved by vi only: findBy and user-event would rely on
-// the global jest object, which only the Relay test utilities provide.
+// The fake timers are moved by vi only: findBy and user-event would need a
+// global jest object, which the Vitest setup does not provide.
 const settleRequests = () => act(() => vi.advanceTimersByTimeAsync(0));
 
 const renderLoadedList = async () => {

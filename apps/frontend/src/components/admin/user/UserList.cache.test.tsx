@@ -98,8 +98,8 @@ describe('UserList cache', () => {
   it('should reload the users once when many users are added at once', async () => {
     // Given
     testRender(<UserList />);
-    // vi.waitFor moves the fake timers itself; findBy would rely on the global
-    // jest object, which only the Relay test utilities provide.
+    // vi.waitFor moves the fake timers itself; findBy would need a global jest
+    // object, which the Vitest setup does not provide.
     await vi.waitFor(() =>
       expect(screen.getByText(USER.email)).toBeInTheDocument()
     );

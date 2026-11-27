@@ -20,6 +20,7 @@ import {
 } from '@filigran/design-system';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { useTrialsCancelDeploymentRequestMutation } from '@graphql/generated';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
@@ -132,6 +133,9 @@ export const BundleCancelSheet = ({
         invalidatePrivateNavigationQueries(queryClient);
         queryClient.invalidateQueries({
           queryKey: xtmPlatformBundleKeys.all(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: registrationKeys.allByServiceInstance(),
         });
         setOpen(false);
       },

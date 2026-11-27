@@ -4,10 +4,10 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 /**
- * Opt-in counterpart of `serverPortalApiFetch`'s behaviour for the react-query
- * server fetches (`serverGraphqlFetch`, `getAuthenticatedGraphqlClient`), which
- * only throw `UnauthenticatedError`: wrap the call to send the visitor to the
- * signup page, then back to the page they asked for, instead.
+ * Opt-in redirect for the react-query server fetches (`serverGraphqlFetch`,
+ * `getAuthenticatedGraphqlClient`), which only throw `UnauthenticatedError`:
+ * wrap the call to send the visitor to the signup page, then back to the page
+ * they asked for, instead.
  *
  *   await redirectToSignupOnUnauthenticated(() =>
  *     serverGraphqlFetch<MyQuery>(MyDocument)

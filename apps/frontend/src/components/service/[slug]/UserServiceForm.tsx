@@ -281,7 +281,7 @@ export const UserServiceForm = ({
     [keptUsersOptions]
   );
 
-  // The form waits for the users, as it did when the Relay query suspended it.
+  // The form waits for the users before it renders.
   if (!data) {
     return <Loader />;
   }

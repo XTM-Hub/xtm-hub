@@ -4,7 +4,7 @@ import {
   UserAccountStatus,
 } from '@graphql/generated';
 
-// Structural types, so these helpers work with Relay and react-query user data alike
+// Structural types, so these helpers work with any query result that has these fields
 type UserOrganizationCapabilities =
   | ReadonlyArray<{
       organization: { id: string; personal_space: boolean };
