@@ -15,7 +15,10 @@ import {
   DeploymentRequestDomain,
   FullyQualifiedDeploymentRequest,
 } from '../../../deployment/deployment.domain';
-import { PlatformConfigurationDomain } from '../../../registration/platform-configuration/platform-configuration.domain';
+import {
+  FullPlatformConfiguration,
+  PlatformConfigurationDomain,
+} from '../../../registration/platform-configuration/platform-configuration.domain';
 import { OrganizationDomain } from '../../organization/organization.domain';
 import { UserDomain } from '../user-domain/user.domain';
 
@@ -125,6 +128,31 @@ const loadHubUserContact = async ({
   return { ...sender, message: `${platformIdentifier}: ${message}` };
 };
 
+// The user who registered the platform, in the organization subscribed to it. Undefined when that user is gone.
+const loadRegistrationContact = async (
+  { platformConfiguration, platformIdentifier }: FullPlatformConfiguration,
+  message: string
+): Promise<ReachOutSalesPayload | undefined> => {
+  const [registerer, organization] = await Promise.all([
+    UserDomain.loadUserBy({
+      'User.id': platformConfiguration.registerer_id,
+    }),
+    OrganizationDomain.loadOrganizationSubscribedToServiceInstance(
+      platformConfiguration.service_instance_id
+    ),
+  ]);
+  if (!registerer) {
+    return undefined;
+  }
+  return {
+    email: registerer.email,
+    firstname: registerer.first_name,
+    lastname: registerer.last_name,
+    company: organization?.name ?? '',
+    message: `${platformIdentifier}: ${message}`,
+  };
+};
+
 /**
  * Resolves the contact of a platform calling without a Hub session: the requester of its trial deployment, or the
  * user who registered it. Throws when the platform id and token match neither, so the caller gets a real error.
@@ -157,28 +185,19 @@ const loadPlatformContact = async ({
     registration?.platformConfiguration.status ===
     PlatformConfigurationStatus.Active
   ) {
-    const { platformConfiguration, platformIdentifier } = registration;
-    const [registerer, organization] = await Promise.all([
-      UserDomain.loadUserBy({
-        'User.id': platformConfiguration.registerer_id,
-      }),
-      OrganizationDomain.loadOrganizationSubscribedToServiceInstance(
-        platformConfiguration.service_instance_id
-      ),
-    ]);
-    if (registerer) {
-      return {
-        email: registerer.email,
-        firstname: registerer.first_name,
-        lastname: registerer.last_name,
-        company: organization?.name ?? '',
-        message: `${platformIdentifier}: ${message}`,
-      };
+    const contact = await loadRegistrationContact(registration, message);
+    if (contact) {
+      return contact;
     }
   }
 
   throw new Error(ErrorCode.InvalidPlatformToken);
 };
+
+type PlatformContactInput =
+  // A platform authenticated by its assertion: the registration its key belongs to.
+  | { message?: string; registration: FullPlatformConfiguration }
+  | { message?: string; platformId: string; platformToken: string };
 
 export const UserContactApp = {
   /**
@@ -208,23 +227,27 @@ export const UserContactApp = {
   },
 
   /**
-   * Sends the message of a platform calling with its own id and token to sales. Throws when they match no trial or
+   * Sends the message of a platform to sales: one authenticated by its assertion, or one calling with its own id and
+   * token. Throws when the registration has no registerer left, or when the id and token match no trial or
    * registration; the delivery itself is best effort.
    */
-  contactSalesFromPlatform: async ({
-    message = DEFAULT_MESSAGE,
-    platformId,
-    platformToken,
-  }: {
-    message?: string;
-    platformId: string;
-    platformToken: string;
-  }) => {
-    const contact = await loadPlatformContact({
-      message,
-      platformId,
-      platformToken,
-    });
+  contactSalesFromPlatform: async (input: PlatformContactInput) => {
+    const message = input.message ?? DEFAULT_MESSAGE;
+    const platformId =
+      'registration' in input
+        ? input.registration.platformConfiguration.platform_id
+        : input.platformId;
+    const contact =
+      'registration' in input
+        ? await loadRegistrationContact(input.registration, message)
+        : await loadPlatformContact({
+            message,
+            platformId,
+            platformToken: input.platformToken,
+          });
+    if (!contact) {
+      throw new Error(ErrorCode.InvalidPlatformToken);
+    }
     await contactSalesRateLimiter.consumeOrThrow(`platform:${platformId}`);
     await hubspotReachOutSalesHook(contact);
   },

@@ -1,4 +1,5 @@
 import type { Request } from 'express';
+import { generateKeyPair } from 'jose';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
@@ -864,6 +865,75 @@ describe('buildPlatformPrincipal', () => {
       expect(JSON.stringify(logWarn.mock.calls)).not.toContain(PLATFORM_TOKEN);
     }
   );
+
+  describe('with an assertion', () => {
+    const cleanups: (() => Promise<void>)[] = [];
+
+    const givenKeyedCaller = async () => {
+      const caller = await TestHelper.keyedPlatformCaller.create();
+      cleanups.push(caller.cleanup);
+      return caller;
+    };
+    const withAssertion = (assertion: string) =>
+      withPlatformHeaders(
+        TestHelper.keyedPlatformCaller.assertionHeaders(assertion)
+      );
+
+    afterEach(async () => {
+      await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+    });
+
+    it('should build a platform caller from the registration of the key', async () => {
+      // Given
+      const caller = await givenKeyedCaller();
+
+      // When
+      const principal = await buildPlatformPrincipal('registration')(
+        withAssertion(await caller.sign())
+      );
+
+      // Then
+      expect(principal).toMatchObject({
+        kind: 'platform',
+        actorId: PLATFORM_USER_UUID,
+        credential: 'registration',
+        platformId: caller.platformId,
+        organization: { id: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID },
+      });
+    });
+
+    it('should build an anonymous principal when the deployment request credential is required', async () => {
+      // Given
+      vi.spyOn(logApp, 'warn').mockImplementation(() => undefined);
+      const caller = await givenKeyedCaller();
+
+      // When
+      const principal = await buildPlatformPrincipal('deploymentRequest')(
+        withAssertion(await caller.sign())
+      );
+
+      // Then
+      expect(principal).toEqual({ kind: 'anonymous' });
+    });
+
+    it('should throw the PLATFORM_KEY_MISMATCH error rather than build an anonymous principal when another key signed the assertion', async () => {
+      // Given
+      const caller = await givenKeyedCaller();
+      const { privateKey } = await generateKeyPair('Ed25519');
+
+      // When
+      const call = buildPlatformPrincipal('registration')(
+        withAssertion(await caller.sign({ key: privateKey }))
+      );
+
+      // Then
+      await expect(call).rejects.toMatchObject({
+        name: ErrorType.Unauthenticated,
+        message: UnauthenticatedErrorCode.PlatformKeyMismatch,
+        extensions: { code: UnauthenticatedErrorCode.PlatformKeyMismatch },
+      });
+    });
+  });
 
   it('should let the error through when a lookup fails', async () => {
     // Given

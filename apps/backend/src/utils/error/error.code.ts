@@ -1,5 +1,8 @@
 export enum UnauthenticatedErrorCode {
   Unauthenticated = 'UNAUTHENTICATED',
+  PlatformAssertionInvalid = 'PLATFORM_ASSERTION_INVALID',
+  PlatformKeyMismatch = 'PLATFORM_KEY_MISMATCH',
+  PlatformTokenRefused = 'PLATFORM_TOKEN_REFUSED',
 }
 
 export enum ForbiddenErrorCode {

@@ -25,6 +25,10 @@ import { requestContext } from '../../../../context/request.context';
 import { ErrorCode } from '../../../../utils/error/error.code';
 import { contactSalesRateLimiter } from '../../../../utils/rate-limit.util';
 import * as utils from '../../../../utils/utils';
+import {
+  FullPlatformConfiguration,
+  PlatformConfigurationDomain,
+} from '../../../registration/platform-configuration/platform-configuration.domain';
 import { RegistrationApp } from '../../../registration/registration.app';
 import { UserContactApp } from './user-contact.app';
 
@@ -441,6 +445,65 @@ describe('user contact app', () => {
       // Then
       await expect(call).rejects.toThrow(ErrorCode.TooManyRequests);
       expect(fetchSpy).toHaveBeenCalledTimes(5);
+    });
+
+    describe('authenticated by an assertion', () => {
+      const MESSAGE = 'Please call me';
+      let caller: Awaited<
+        ReturnType<typeof TestHelper.keyedPlatformCaller.create>
+      >;
+      let registration: FullPlatformConfiguration;
+
+      beforeEach(async () => {
+        caller = await TestHelper.keyedPlatformCaller.create();
+        registration =
+          (await PlatformConfigurationDomain.loadResolvedConfigurationByServiceInstance(
+            caller.serviceInstanceId
+          ))!;
+      });
+
+      afterEach(async () => {
+        await caller.cleanup();
+      });
+
+      it('should send the registerer as contact for the registration', async () => {
+        // When
+        await UserContactApp.contactSalesFromPlatform({
+          message: MESSAGE,
+          registration,
+        });
+
+        // Then
+        expectSentContact({
+          email: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.EMAIL,
+          firstname:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.FIRST_NAME,
+          lastname:
+            TEST_ORGANIZATIONS.SECOND_ORGANIZATION.USERS.REGISTERER.LAST_NAME,
+          company: TEST_ORGANIZATIONS.SECOND_ORGANIZATION.NAME,
+          message: `opencti: ${MESSAGE}`,
+        });
+      });
+
+      it('should refuse a sixth message from the same platform within the hour without sending it', async () => {
+        // Given
+        for (let sent = 0; sent < 5; sent++) {
+          await UserContactApp.contactSalesFromPlatform({
+            message: MESSAGE,
+            registration,
+          });
+        }
+
+        // When
+        const call = UserContactApp.contactSalesFromPlatform({
+          message: MESSAGE,
+          registration,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(ErrorCode.TooManyRequests);
+        expect(fetchSpy).toHaveBeenCalledTimes(5);
+      });
     });
 
     it('should refuse an unknown platform token without sending anything', async () => {

@@ -1,9 +1,14 @@
-import { describe, vi } from 'vitest';
+import { v4 as uuidv4 } from 'uuid';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import {
   ForbiddenErrorCode,
   UnauthenticatedErrorCode,
 } from '../../utils/error/error.code';
+import {
+  PLATFORM_ID_HEADER,
+  PLATFORM_TOKEN_HEADER,
+} from '../security-management/token/platform-token.util';
 import { NewsFeedApp } from './news-feed.app';
 import { NewsFeedDomain } from './news-feed.domain';
 
@@ -36,6 +41,113 @@ describe('consumeProvisionedNewsFeedItems mutation', () => {
         cleanup: platformCaller.cleanup,
       };
     },
+  });
+});
+
+describe('consumeProvisionedNewsFeedItems mutation with a keyed registration', () => {
+  const executeAsPlatform = TestHelper.useGraphqlAsPlatform();
+  const CONSUME = `mutation {
+    consumeProvisionedNewsFeedItems { news_feed_items { id } }
+  }`;
+  const EMPTY_CONSUMPTION = { news_feed_items: [] };
+  const cleanups: (() => Promise<void>)[] = [];
+
+  const givenKeyedCaller = async () => {
+    const caller = await TestHelper.keyedPlatformCaller.create();
+    cleanups.push(caller.cleanup);
+    return caller;
+  };
+  const assertionHeaders = TestHelper.keyedPlatformCaller.assertionHeaders;
+
+  afterEach(async () => {
+    await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
+  });
+
+  it('should consume the items of the registration when the assertion is valid', async () => {
+    // Given
+    const caller = await givenKeyedCaller();
+    const consume = vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems');
+
+    // When
+    const result = await executeAsPlatform(
+      assertionHeaders(await caller.sign()),
+      CONSUME
+    );
+
+    // Then
+    expect(result).toMatchObject({
+      data: { consumeProvisionedNewsFeedItems: EMPTY_CONSUMPTION },
+    });
+    expect(consume).toHaveBeenCalledExactlyOnceWith({
+      registration: expect.objectContaining({
+        platformConfiguration: expect.objectContaining({
+          service_instance_id: caller.serviceInstanceId,
+        }),
+      }),
+    });
+  });
+
+  it('should authenticate every field of one request with its single assertion', async () => {
+    // Given
+    const caller = await givenKeyedCaller();
+
+    // When
+    const result = await executeAsPlatform(
+      assertionHeaders(await caller.sign()),
+      `mutation {
+        first: consumeProvisionedNewsFeedItems { news_feed_items { id } }
+        second: consumeProvisionedNewsFeedItems { news_feed_items { id } }
+      }`
+    );
+
+    // Then
+    expect(result).toEqual({
+      data: { first: EMPTY_CONSUMPTION, second: EMPTY_CONSUMPTION },
+    });
+  });
+
+  it('should refuse with PLATFORM_ASSERTION_INVALID an assertion sent a second time', async () => {
+    // Given
+    const caller = await givenKeyedCaller();
+    const headers = assertionHeaders(await caller.sign());
+    await executeAsPlatform(headers, CONSUME);
+    const consume = vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems');
+
+    // When
+    const result = await executeAsPlatform(headers, CONSUME);
+
+    // Then
+    expect(result.errors).toMatchObject([
+      {
+        message: UnauthenticatedErrorCode.PlatformAssertionInvalid,
+        extensions: { code: UnauthenticatedErrorCode.PlatformAssertionInvalid },
+      },
+    ]);
+    expect(consume).not.toHaveBeenCalled();
+  });
+
+  it('should refuse with PLATFORM_TOKEN_REFUSED the revoked token of a platform that enrolled a key', async () => {
+    // Given
+    const caller = await givenKeyedCaller();
+    const consume = vi.spyOn(NewsFeedApp, 'consumeProvisionedNewsFeedItems');
+
+    // When
+    const result = await executeAsPlatform(
+      {
+        [PLATFORM_ID_HEADER]: caller.platformId,
+        [PLATFORM_TOKEN_HEADER]: uuidv4(),
+      },
+      CONSUME
+    );
+
+    // Then
+    expect(result.errors).toMatchObject([
+      {
+        message: UnauthenticatedErrorCode.PlatformTokenRefused,
+        extensions: { code: UnauthenticatedErrorCode.PlatformTokenRefused },
+      },
+    ]);
+    expect(consume).not.toHaveBeenCalled();
   });
 });
 

@@ -10,8 +10,9 @@ import {
 
 export const REDACTED_VALUE = '[REDACTED]';
 
-// Matches the names of values that must never reach a log line: platform and user tokens, passwords, client secrets.
-const SECRET_KEY_PATTERN = /token|password|secret/i;
+// Matches the names of values that must never reach a log line: platform and user tokens, platform assertions
+// (the `xtm-hub-platform-assertion` header), passwords, client secrets.
+const SECRET_KEY_PATTERN = /token|password|secret|assertion/i;
 
 const REDACTED_LITERAL: StringValueNode = {
   kind: Kind.STRING,

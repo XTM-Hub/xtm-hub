@@ -1,6 +1,7 @@
 import cors from 'cors';
 import { Express, Request } from 'express';
 import { Readable } from 'stream';
+import { PlatformConfigurationStatus } from '../../../__generated__/resolvers-types';
 import { requestContext } from '../../../context/request.context';
 import { DocumentId } from '../../../model/kanel/public/Document';
 import { UserLoadUserBy } from '../../../model/user';
@@ -8,15 +9,20 @@ import { DocumentDomain } from '../../../modules/document/domain/document.domain
 import { OrganizationDomain } from '../../../modules/organization-management/organization/organization.domain';
 import { UserDomain } from '../../../modules/organization-management/user/user-domain/user.domain';
 import {
-  extractPlatformToken,
-  validateActivePlatformToken,
-} from '../../../modules/security-management/token/platform-token.util';
+  authenticatePlatform,
+  PLATFORM_ASSERTION_HEADER,
+  PlatformAuthenticationErrorCode,
+} from '../../../modules/security-management/token/platform-authentication.util';
+import { extractPlatformToken } from '../../../modules/security-management/token/platform-token.util';
 import { ServiceInstanceDomain } from '../../../modules/service/instance/service-instance.domain';
 import { TelemetryApp } from '../../../modules/telemetry/telemetry.app';
 import { TelemetryHelper } from '../../../modules/telemetry/telemetry.helper';
 import { MinIOClient } from '../../../thirdparty/minio/client';
 import { logApp } from '../../../utils/app-logger.util';
-import { ErrorCode } from '../../../utils/error/error.code';
+import {
+  ErrorCode,
+  UnauthenticatedErrorCode,
+} from '../../../utils/error/error.code';
 import { NotFoundError } from '../../../utils/error/error.util';
 import {
   documentDownloadIpRateLimiter,
@@ -50,6 +56,43 @@ const loadUser = async (
   };
 };
 
+/**
+ * Checks the platform that downloads for its user, if any. An assertion must be signed for this very path (htu), so
+ * an assertion for one document opens no other. Without one, the platform token is checked only when present, to keep
+ * old OpenCTI versions compatible. Returns the refusal, or undefined when the download may go on.
+ */
+const checkPlatformOfRequest = async (
+  req: Request,
+  isLoadedFromUserPlatformToken: boolean | undefined
+): Promise<{ code?: PlatformAuthenticationErrorCode } | undefined> => {
+  if (req.headers[PLATFORM_ASSERTION_HEADER] !== undefined) {
+    const authentication = await authenticatePlatform(req, { htu: req.path });
+    if (authentication.outcome === 'authenticated') {
+      return undefined;
+    }
+    return {
+      code:
+        authentication.outcome === 'refused'
+          ? authentication.code
+          : UnauthenticatedErrorCode.PlatformAssertionInvalid,
+    };
+  }
+
+  if (!isLoadedFromUserPlatformToken || !extractPlatformToken(req)) {
+    return undefined;
+  }
+  const authentication = await authenticatePlatform(req);
+  if (authentication.outcome === 'refused') {
+    return { code: authentication.code };
+  }
+  const isActiveRegistration =
+    authentication.outcome === 'token' &&
+    authentication.match?.credential === 'registration' &&
+    authentication.match.registration.platformConfiguration.status ===
+      PlatformConfigurationStatus.Active;
+  return isActiveRegistration ? undefined : {};
+};
+
 export const documentDownloadEndpoint = (app: Express) => {
   app
     .options(`/document/get/:serviceInstanceId/:filename`, cors())
@@ -67,16 +110,15 @@ export const documentDownloadEndpoint = (app: Express) => {
         }
 
         requestContext.update({ user });
-        const token = extractPlatformToken(req);
-        // check only if token is present to keep old OpenCTI versions compatibility
-        if (isLoadedFromUserPlatformToken && token) {
-          const isPlatformTokenValid = await validateActivePlatformToken(req);
-
-          if (!isPlatformTokenValid) {
-            return res
-              .status(403)
-              .json({ message: 'platform registration is not valid' });
-          }
+        const refusal = await checkPlatformOfRequest(
+          req,
+          isLoadedFromUserPlatformToken
+        );
+        if (refusal) {
+          return res.status(403).json({
+            message: 'platform registration is not valid',
+            ...(refusal.code && { code: refusal.code }),
+          });
         }
 
         const filename = Array.isArray(req.params.filename)

@@ -106,11 +106,10 @@ const areCredentialsUuids = ({
 // across all its tenant registrations.
 const whereTenant = (
   qb: Knex.QueryBuilder,
-  tenantId: string | null
+  tenantId: string | null,
+  column = 'tenant_id'
 ): Knex.QueryBuilder =>
-  tenantId === null
-    ? qb.whereNull('tenant_id')
-    : qb.where('tenant_id', '=', tenantId);
+  tenantId === null ? qb.whereNull(column) : qb.where(column, '=', tenantId);
 
 // The SaaS Manager pushed the platform as a production instance.
 const SAAS_MANAGER_PROD_PLATFORM = `EXISTS (SELECT 1 FROM "SaasManagerInstance" WHERE "SaasManagerInstance"."id" = "PlatformConfiguration"."platform_id" AND "SaasManagerInstance"."data"->>'commercial_model' = 'PROD')`;
@@ -256,6 +255,45 @@ export const PlatformConfigurationDomain = {
       .where('public_key_id', '=', public_key_id);
 
     return whereTenant(qb, tenant_id).first();
+  },
+
+  // The registration a platform assertion names, with its product. Same lookup as loadConfigurationByPlatformAndKeyId.
+  loadResolvedConfigurationByPlatformAndKeyId: async ({
+    platform_id,
+    tenant_id,
+    public_key_id,
+  }: {
+    platform_id: string;
+    tenant_id: string | null;
+    public_key_id: string;
+  }): Promise<FullPlatformConfiguration | undefined> => {
+    if (!arePlatformAndTenantUuids({ platform_id, tenant_id })) {
+      return undefined;
+    }
+
+    const qb = buildJoinedConfigurationQuery()
+      .where('PlatformConfiguration.platform_id', '=', platform_id)
+      .where('PlatformConfiguration.public_key_id', '=', public_key_id);
+
+    const row = (await whereTenant(
+      qb,
+      tenant_id,
+      'PlatformConfiguration.tenant_id'
+    ).first()) as PlatformConfigurationWithDefinition | undefined;
+    return row ? resolvePlatformFromJoinedRow(row) : undefined;
+  },
+
+  // Whether an active registration of the platform has enrolled a key: its token no longer authenticates it.
+  hasActiveEnrolledKey: async (platform_id: string): Promise<boolean> => {
+    if (!isUuid(platform_id)) {
+      return false;
+    }
+    const row = await db<PlatformConfiguration>('PlatformConfiguration')
+      .where('platform_id', '=', platform_id)
+      .where('status', '=', PlatformConfigurationStatus.Active)
+      .whereNotNull('public_key_id')
+      .first('service_instance_id');
+    return row !== undefined;
   },
 
   // Stores the key and revokes the token in one statement: of two concurrent enrollments with the same token, only
