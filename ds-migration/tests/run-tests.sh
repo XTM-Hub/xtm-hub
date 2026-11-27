@@ -499,7 +499,7 @@ echo half > apps/frontend/src/sync-half.ts
 : >"$SB/calls.log"
 run --once
 check "radio done after the sync checks" '[ "$(status_of 3553-radio)" = done ]'
-check "interrupted sync fix: changes put aside, sync checks run again" 'git stash list | grep -q "ds-migration base merge fix interrupted" && grep -q "^yarn workspace @xtm-hub/frontend check-ts" "$SB/calls.log" && [ ! -e "$(git rev-parse --git-dir)/ds-migration/base-merge.pending" ]'
+check "interrupted sync fix: changes put aside, sync checks run again" 'git stash list | grep -q "ds-migration base merge fix interrupted" && grep -A1 "^yarn workspace @xtm-hub/frontend check-ts$" "$SB/calls.log" | grep -q "^yarn workspace @xtm-hub/frontend lint$" && [ ! -e "$(git rev-parse --git-dir)/ds-migration/base-merge.pending" ]'
 mkdir -p "$(git rev-parse --git-dir)/ds-migration/run.lock" && echo $$ >"$(git rev-parse --git-dir)/ds-migration/run.lock/pid"
 run --once
 check "second run refused while one is running" 'grep -q "STOP: run.sh is already running (pid $$)" "$SB/out.log" && [ "$(status_of 3541-checkbox)" = backlog ]'
