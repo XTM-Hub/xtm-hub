@@ -9,6 +9,7 @@ import {
 } from 'vitest';
 import { TestHelper } from '../../../tests/helper/test.helper';
 import { PlatformIdentifier } from '../../__generated__/resolvers-types';
+import { logApp } from '../../utils/app-logger.util';
 import { BadRequestErrorCode } from '../../utils/error/error.code';
 import { NewsFeedApp } from '../news-feed/news-feed.app';
 import { ManifestFragmentHelper } from '../shareable-resource/manifest-fragment/manifest-fragment.helper';
@@ -17,6 +18,8 @@ import { ManageProductVersionApp } from './manage-product-version.app';
 
 const OPENAEV_VERSION = '3.261104.0';
 const OPENAEV_LTS_VERSION = '3.260309.0-lts.8';
+const OPENCTI_VERSION = '6.4.0';
+const OPENCTI_LTS_VERSION = '7.260309.0-lts.8';
 
 describe('manageProductVersionApp', () => {
   describe('handleNewProductVersion for OpenAEV', () => {
@@ -98,6 +101,153 @@ describe('manageProductVersionApp', () => {
           product: PlatformIdentifier.Openaev,
         })
       ).toEqual([]);
+    });
+  });
+
+  describe('handleNewProductVersion for OpenCTI', () => {
+    let createGithubReleaseNewsFeedItemSpy: MockInstance<
+      typeof NewsFeedApp.createGithubReleaseNewsFeedItem
+    >;
+    let requestManifestGenerationSpy: MockInstance<
+      typeof ManifestApp.requestManifestGeneration
+    >;
+
+    // The migrations pre-register the OpenCTI 6.x and 7.x versions.
+    beforeEach(async () => {
+      await TestHelper.productVersion.delete({});
+      createGithubReleaseNewsFeedItemSpy = vi
+        .spyOn(NewsFeedApp, 'createGithubReleaseNewsFeedItem')
+        .mockResolvedValue(undefined);
+      requestManifestGenerationSpy = vi
+        .spyOn(ManifestApp, 'requestManifestGeneration')
+        .mockResolvedValue(undefined);
+    });
+
+    afterEach(async () => {
+      vi.restoreAllMocks();
+      await TestHelper.productVersion.delete({});
+    });
+
+    const expectNothingCreated = async () => {
+      expect(requestManifestGenerationSpy).not.toHaveBeenCalled();
+      expect(createGithubReleaseNewsFeedItemSpy).not.toHaveBeenCalled();
+      expect(
+        await TestHelper.productVersion.loadAll({
+          product: PlatformIdentifier.Opencti,
+        })
+      ).toEqual([]);
+    };
+
+    it('should request manifest generation and register the product version when the version is valid', async () => {
+      // When
+      await ManageProductVersionApp.handleNewProductVersion({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_VERSION,
+      });
+
+      // Then
+      expect(requestManifestGenerationSpy).toHaveBeenCalledWith({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_VERSION,
+        type: 'connector',
+      });
+      const rows = await TestHelper.productVersion.loadAll({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_VERSION,
+      });
+      expect(rows).toHaveLength(1);
+      expect(createGithubReleaseNewsFeedItemSpy).toHaveBeenCalledWith({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_VERSION,
+      });
+    });
+
+    it('should not register the product version when manifest generation fails', async () => {
+      // Given
+      requestManifestGenerationSpy.mockRejectedValue(
+        new Error('manifest generation failed')
+      );
+
+      // When
+      const call = ManageProductVersionApp.handleNewProductVersion({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_VERSION,
+      });
+
+      // Then
+      await expect(call).rejects.toThrow('manifest generation failed');
+      const rows = await TestHelper.productVersion.loadAll({
+        product: PlatformIdentifier.Opencti,
+      });
+      expect(rows).toHaveLength(0);
+    });
+
+    it('should neither request a manifest nor register the version but create the news feed item when the version is LTS', async () => {
+      // When
+      await ManageProductVersionApp.handleNewProductVersion({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_LTS_VERSION,
+      });
+
+      // Then
+      expect(requestManifestGenerationSpy).not.toHaveBeenCalled();
+      expect(
+        await TestHelper.productVersion.loadAll({
+          product: PlatformIdentifier.Opencti,
+        })
+      ).toEqual([]);
+      expect(createGithubReleaseNewsFeedItemSpy).toHaveBeenCalledWith({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_LTS_VERSION,
+      });
+    });
+
+    it.each([
+      ['not a version', 'not-a-version'],
+      ['an LTS suffix without patch', '7.260309.0-lts'],
+      ['an LTS suffix without dot', '7.260309.0-lts8'],
+      ['a date part longer than 6 digits', '7.2603091.0'],
+      ['an uppercase LTS suffix', '7.260309.0-LTS.8'],
+    ])(
+      'should reject the version and create nothing when it is %s',
+      async (_description, version) => {
+        // When
+        const call = ManageProductVersionApp.handleNewProductVersion({
+          product: PlatformIdentifier.Opencti,
+          version,
+        });
+
+        // Then
+        await expect(call).rejects.toThrow(
+          BadRequestErrorCode.InvalidPlatformVersion
+        );
+        await expectNothingCreated();
+      }
+    );
+
+    it('should succeed and log the error when the news feed item creation fails', async () => {
+      // Given
+      const newsFeedError = new Error('news feed failure');
+      createGithubReleaseNewsFeedItemSpy.mockRejectedValue(newsFeedError);
+      const logErrorSpy = vi.spyOn(logApp, 'error');
+
+      // When
+      await ManageProductVersionApp.handleNewProductVersion({
+        product: PlatformIdentifier.Opencti,
+        version: OPENCTI_LTS_VERSION,
+      });
+
+      // Then
+      await vi.waitFor(() =>
+        expect(logErrorSpy).toHaveBeenCalledWith(
+          'Unable to create the GitHub release news feed item',
+          {
+            error: newsFeedError,
+            product: PlatformIdentifier.Opencti,
+            version: OPENCTI_LTS_VERSION,
+          }
+        )
+      );
     });
   });
 
