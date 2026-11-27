@@ -10,7 +10,6 @@ import SettingsContext from '@/components/settings/SettingsContext';
 import { ErrorPage } from '@/components/ui/ErrorPage';
 import { getQueryClient } from '@/lib/query-client';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
-import { RelayProvider } from '@/relay/relay-provider';
 import { loadMeUser } from '@/utils/load-me-user';
 import { getMetadataBase } from '@/utils/metadata';
 import {
@@ -83,25 +82,23 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   }
 
   return (
-    <RelayProvider>
-      <ReactQueryProvider>
-        <HydrationBoundary state={dehydrate(queryClient)}>
-          <SettingsContext>
-            <MeContext>
-              <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-var(--cookie-banner-height,0px))]">
-                <div className="w-1/3">
-                  <LogoXTMDark className="pb-6" />
+    <ReactQueryProvider>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <SettingsContext>
+          <MeContext>
+            <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-var(--cookie-banner-height,0px))]">
+              <div className="w-1/3">
+                <LogoXTMDark className="pb-6" />
 
-                  <SharedContent className="flex flex-col bg-gradient-default px-3 pt-3 sm:px-6 sm:p-6">
-                    {children}
-                  </SharedContent>
-                </div>
+                <SharedContent className="flex flex-col bg-gradient-default px-3 pt-3 sm:px-6 sm:p-6">
+                  {children}
+                </SharedContent>
               </div>
-            </MeContext>
-          </SettingsContext>
-        </HydrationBoundary>
-      </ReactQueryProvider>
-    </RelayProvider>
+            </div>
+          </MeContext>
+        </SettingsContext>
+      </HydrationBoundary>
+    </ReactQueryProvider>
   );
 };
 

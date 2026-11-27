@@ -16,18 +16,15 @@ import {
   useLogoutMutation,
 } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
-import { commitLocalUpdate, useRelayEnvironment } from 'react-relay';
 
 // Component
 const UserEventSubscription = () => {
   const t = useTranslate();
   const router = useRouter();
-  const environment = useRelayEnvironment();
   const queryClient = useQueryClient();
 
   const { mutate: commitLogout } = useLogoutMutation(portalGraphqlClient, {
     onSuccess() {
-      commitLocalUpdate(environment, (store) => store.invalidateStore());
       refreshAnalyticsUser().then(() => {
         router.push('/?error=account-deleted');
         router.refresh();

@@ -12,7 +12,6 @@ import {
   analyticsResource,
   toAnalyticsResourceData,
 } from '@/lib/analytics/analytics.context';
-import { RelayProvider } from '@/relay/relay-provider';
 import { filterDocumentImages, findDocumentLogo } from '@/utils/documents';
 import { getResourcePageFiligranWebsiteUtm } from '@/utils/filigran-website-utm';
 import { formatPersonNames } from '@/utils/format/name';
@@ -314,13 +313,11 @@ const Page = async ({
         <div className="flex flex-col w-full justify-center">
           <div className="flex items-start">
             <h1 className="whitespace-nowrap mb-2">{document.name}</h1>
-            <RelayProvider>
-              <PublicResourceActions
-                documentData={document}
-                pageUrl={pageUrl}
-                shareTooltipText={`Service.${localeMap[serviceInstance.slug as ServiceSlug]}.Actions.Share`}
-              />
-            </RelayProvider>
+            <PublicResourceActions
+              documentData={document}
+              pageUrl={pageUrl}
+              shareTooltipText={`Service.${localeMap[serviceInstance.slug as ServiceSlug]}.Actions.Share`}
+            />
           </div>
           <div>
             <BadgeOverflowCounter

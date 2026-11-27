@@ -3,11 +3,6 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, expect, vi } from 'vitest';
 
-import {
-  getClientEnvironment,
-  registerClientEnvironment,
-} from '@/relay/environment/registry';
-
 import '@testing-library/jest-dom';
 
 import { useIsFeatureEnabled } from '@/hooks/use-is-feature-enabled';
@@ -99,18 +94,6 @@ vi.mock('@/lib/sse-client', () => ({
   }),
 }));
 
-const relayRegistryMocks = vi.hoisted(() => ({
-  getClientEnvironment: vi.fn(),
-  registerClientEnvironment: vi.fn(),
-}));
-
-vi.mock('@/relay/environment/registry', () => relayRegistryMocks);
-
-let mockedClientEnvironment: ReturnType<typeof getClientEnvironment> = null;
-type RegisterClientEnvironment = Parameters<
-  typeof registerClientEnvironment
->[0];
-
 const setDefaultGlobalMocks = () => {
   vi.mocked(useRegisteredPlatforms).mockReturnValue({
     platforms: [],
@@ -130,22 +113,9 @@ const setDefaultGlobalMocks = () => {
   vi.mocked(useSearchParams).mockReturnValue(
     new URLSearchParams() as unknown as ReturnType<typeof useSearchParams>
   );
-  vi.mocked(registerClientEnvironment).mockImplementation(
-    (environment: RegisterClientEnvironment) => {
-      mockedClientEnvironment = environment;
-    }
-  );
-  vi.mocked(getClientEnvironment).mockImplementation(
-    () => mockedClientEnvironment
-  );
-  registerClientEnvironment(null);
 };
 
 setDefaultGlobalMocks();
-
-// relay-test-utils expects a global jest object internally.
-// @ts-expect-error
-global.jest = vi;
 
 class ResizeObserverMock {
   observe() {}

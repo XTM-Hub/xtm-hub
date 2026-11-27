@@ -16,7 +16,6 @@ import SettingsContext from '@/components/settings/SettingsContext';
 import { EditModeProvider } from '@/context/edit-mode-context';
 import { loadOverriddenContentKeys } from '@/i18n/content-translation-overrides';
 import { getQueryClient } from '@/lib/query-client';
-import { RelayProvider } from '@/relay/relay-provider';
 import {
   hasContentEditCapability,
   isContentEditModeActive,
@@ -74,32 +73,30 @@ const RootLayout = async ({ children }: RootLayoutProps) => {
   );
 
   return (
-    <RelayProvider>
-      <ReactQueryProvider>
-        <HydrationBoundary state={dehydrate(queryClient)}>
-          <div className="flex min-h-[calc(100dvh-var(--cookie-banner-height,0px))]">
-            <SettingsContext>
-              <MeContext>
-                <EditModeProvider
-                  canEditContent={hasContentEditCapability(me)}
-                  isEditMode={isEditMode}
-                  pendingChangeCount={pendingChangeCount}
-                  overriddenKeys={overriddenKeys}>
-                  <AppShell
-                    banners={banners}
-                    menu={<PrivateMenu />}
-                    headerContent={<HeaderComponent />}
-                    contentClassName="p-3 sm:p-6">
-                    {children}
-                  </AppShell>
-                  <EditModeContentObserver />
-                </EditModeProvider>
-              </MeContext>
-            </SettingsContext>
-          </div>
-        </HydrationBoundary>
-      </ReactQueryProvider>
-    </RelayProvider>
+    <ReactQueryProvider>
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <div className="flex min-h-[calc(100dvh-var(--cookie-banner-height,0px))]">
+          <SettingsContext>
+            <MeContext>
+              <EditModeProvider
+                canEditContent={hasContentEditCapability(me)}
+                isEditMode={isEditMode}
+                pendingChangeCount={pendingChangeCount}
+                overriddenKeys={overriddenKeys}>
+                <AppShell
+                  banners={banners}
+                  menu={<PrivateMenu />}
+                  headerContent={<HeaderComponent />}
+                  contentClassName="p-3 sm:p-6">
+                  {children}
+                </AppShell>
+                <EditModeContentObserver />
+              </EditModeProvider>
+            </MeContext>
+          </SettingsContext>
+        </div>
+      </HydrationBoundary>
+    </ReactQueryProvider>
   );
 };
 

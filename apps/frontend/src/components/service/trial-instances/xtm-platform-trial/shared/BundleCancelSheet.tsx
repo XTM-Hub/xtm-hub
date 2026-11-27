@@ -2,7 +2,6 @@
 
 import { invalidatePrivateNavigationQueries } from '@/components/menu/navigation/private/private-navigation-query-invalidation';
 import { SelectWithEditableField } from '@/components/service/registration/SelectWithEditableField';
-import { syncCancelledDeploymentRequestToRelayStore } from '@/components/service/trial-instances/cancelled-deployment-request-relay-store';
 import { AutoForm } from '@/components/ui/auto-form';
 import { useFormField } from '@/components/ui/form';
 import { showSnackbar } from '@/components/ui/snackbar/snackbar-store';
@@ -24,7 +23,6 @@ import { useTrialsCancelDeploymentRequestMutation } from '@graphql/generated';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { ControllerRenderProps, FieldValues } from 'react-hook-form';
-import { useRelayEnvironment } from 'react-relay';
 import { z } from 'zod';
 
 const buildBundleCancelSchema = (requiredMessage: string) =>
@@ -107,7 +105,6 @@ export const BundleCancelSheet = ({
     [t]
   );
   const queryClient = useQueryClient();
-  const relayEnvironment = useRelayEnvironment();
   const [selectedCancellationReason, setSelectedCancellationReason] =
     useState('');
   // A new fieldType on each render would remount the field and drop the focus
@@ -124,11 +121,7 @@ export const BundleCancelSheet = ({
 
   const { mutate: cancelDeploymentRequest, isPending } =
     useTrialsCancelDeploymentRequestMutation(portalGraphqlClient, {
-      onSuccess: (response) => {
-        syncCancelledDeploymentRequestToRelayStore(
-          relayEnvironment,
-          response.cancelDeploymentRequest
-        );
+      onSuccess: () => {
         showSnackbar({
           severity: 'success',
           title: t('Utils.Success'),

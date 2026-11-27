@@ -10,15 +10,11 @@ import { render, renderHook } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import { ReactNode } from 'react';
-import { RelayEnvironmentProvider } from 'react-relay/hooks';
-import { createMockEnvironment } from 'relay-test-utils';
-import { RelayMockEnvironment } from 'relay-test-utils/lib/RelayModernMockEnvironment';
 
 export interface ProvidersWrapperProps {
   children: ReactNode;
   me?: PortalUser;
   settings?: PortalSettings;
-  relayConfig?: RelayMockEnvironment;
 }
 
 export const generateMockUser = (me?: Partial<PortalUser> | null) => {
@@ -69,22 +65,17 @@ export const generateSettings = (settings?: Partial<PortalSettings> | null) => {
 };
 export const ProvidersWrapper = ({
   children,
-  relayConfig,
   me,
   settings,
 }: ProvidersWrapperProps) => {
-  const relayEnv = relayConfig ?? createMockEnvironment();
   return (
-    <RelayEnvironmentProvider environment={relayEnv}>
-      <SettingsPortalContext settings={settings}>
-        <AppPortalContext me={me}>{children}</AppPortalContext>
-      </SettingsPortalContext>
-    </RelayEnvironmentProvider>
+    <SettingsPortalContext settings={settings}>
+      <AppPortalContext me={me}>{children}</AppPortalContext>
+    </SettingsPortalContext>
   );
 };
 
 interface TestRenderOptions {
-  relayConfig?: RelayMockEnvironment;
   /** The react-query client to render with, to seed or inspect its cache. */
   queryClient?: QueryClient;
   me?: Partial<PortalUser> | null;
@@ -123,12 +114,11 @@ const createTestQueryClient = () =>
   });
 
 export const TestWrapper = ({ options, children }: TestWrapperProps) => {
-  const { relayConfig, me, settings, queryClient } = options ?? {};
+  const { me, settings, queryClient } = options ?? {};
 
   return (
     <QueryClientProvider client={queryClient ?? createTestQueryClient()}>
       <ProvidersWrapper
-        relayConfig={relayConfig}
         me={generateMockUser(me)}
         settings={generateSettings(settings)}>
         <NextIntlClientProvider

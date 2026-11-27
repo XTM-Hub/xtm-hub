@@ -1,5 +1,6 @@
 import { isDevelopment } from '@/lib/utils';
-import { Variables } from 'relay-runtime';
+
+type Variables = Record<string, unknown>;
 
 export const SENSITIVE_FIELD_KEYS = new Set([
   'password',

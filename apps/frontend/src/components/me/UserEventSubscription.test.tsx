@@ -14,11 +14,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const DELETED_USER_ID = 'deleted-user-id';
 const EDITED_USER = mockUser({ id: 'user-1', first_name: 'Grace' });
 
-const RELAY_ENVIRONMENT = { name: 'relay-environment' };
-
 const testState = vi.hoisted(() => ({
   commitLogout: vi.fn(),
-  commitLocalUpdate: vi.fn(),
   logoutOptions: undefined as { onSuccess: () => void } | undefined,
   subscriptionOptions: undefined as
     GraphqlSubscriptionOptions<MeUserEventsSubscription> | undefined,
@@ -33,12 +30,6 @@ vi.mock('@graphql/generated', async (importOriginal) => ({
     testState.logoutOptions = options;
     return { mutate: testState.commitLogout };
   },
-}));
-
-vi.mock('react-relay', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('react-relay')>()),
-  useRelayEnvironment: () => RELAY_ENVIRONMENT,
-  commitLocalUpdate: testState.commitLocalUpdate,
 }));
 
 vi.mock('@/hooks/use-graphql-subscription', () => ({
@@ -80,21 +71,6 @@ describe('UserEventSubscription', () => {
     // Then
     expect(testState.commitLogout).toHaveBeenCalledOnce();
     expect(clearFiltersStorage).toHaveBeenCalledOnce();
-  });
-
-  it('should invalidate the Relay store when the logout succeeds', () => {
-    // Given
-    testRender(<UserEventSubscription />);
-    receiveAccountDeletion();
-
-    // When
-    succeedLogout();
-
-    // Then
-    expect(testState.commitLocalUpdate).toHaveBeenCalledWith(
-      RELAY_ENVIRONMENT,
-      expect.any(Function)
-    );
   });
 
   it.each([
