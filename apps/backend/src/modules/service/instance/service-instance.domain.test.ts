@@ -31,6 +31,9 @@ import ServiceInstance, {
 import { PlatformConfigurationInput } from '../../registration/registration.domain';
 import { ServiceInstanceDomain } from './service-instance.domain';
 
+const FILIGRAN = TEST_ORGANIZATIONS.FILIGRAN.ID;
+const SECOND_ORGANIZATION = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
+
 const {
   getUserJoined,
   loadLinks,
@@ -44,6 +47,8 @@ const {
   loadServiceInstanceSubscriptionsByIds,
   loadServiceInstancesByIds,
   loadSubscribedServiceInstancesByIdentifier,
+  isServiceInstancePublic,
+  isServiceInstanceSubscribedByOrganization,
   loadSubscriptionByServiceInstanceAndOrganization,
   updatePlatformConfigurationByServiceInstanceId,
   updateServiceInstance,
@@ -1053,6 +1058,148 @@ describe('service instance domain', () => {
         privateServiceInstanceId
       );
       expect(bySlug).toBeUndefined();
+    });
+  });
+
+  describe('isServiceInstancePublic', () => {
+    let publicInstanceId: ServiceInstanceId;
+    let hiddenInstanceId: ServiceInstanceId;
+    let hiddenSubscribedByFiligranId: ServiceInstanceId;
+    let publicSubscribedByFiligranId: ServiceInstanceId;
+
+    beforeEach(async () => {
+      publicInstanceId = (
+        await TestHelper.serviceInstanceScene.create({ isPublic: true })
+      ).serviceInstance.id;
+      hiddenInstanceId = (
+        await TestHelper.serviceInstanceScene.create({ isPublic: false })
+      ).serviceInstance.id;
+      hiddenSubscribedByFiligranId = (
+        await TestHelper.serviceInstanceScene.create({
+          isPublic: false,
+          subscribedBy: [FILIGRAN],
+        })
+      ).serviceInstance.id;
+      publicSubscribedByFiligranId = (
+        await TestHelper.serviceInstanceScene.create({
+          isPublic: true,
+          subscribedBy: [FILIGRAN],
+        })
+      ).serviceInstance.id;
+    });
+
+    afterEach(async () => {
+      await TestHelper.serviceInstanceScene.cleanupAll();
+    });
+
+    it.each([
+      { label: 'a public service instance', id: () => publicInstanceId },
+      {
+        label: 'a public service instance that is subscribed',
+        id: () => publicSubscribedByFiligranId,
+      },
+    ])('should be true for $label', async ({ id }) => {
+      // When
+      const result = await isServiceInstancePublic(id());
+
+      // Then
+      expect(result).toBe(true);
+    });
+
+    it.each([
+      { label: 'a non public service instance', id: () => hiddenInstanceId },
+      {
+        label: 'a non public service instance that is subscribed',
+        id: () => hiddenSubscribedByFiligranId,
+      },
+      {
+        label: 'an unknown service instance',
+        id: () => uuidv4() as ServiceInstanceId,
+      },
+    ])('should be false for $label', async ({ id }) => {
+      // When
+      const result = await isServiceInstancePublic(id());
+
+      // Then
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('isServiceInstanceSubscribedByOrganization', () => {
+    let publicInstanceId: ServiceInstanceId;
+    let hiddenSubscribedByFiligranId: ServiceInstanceId;
+    let publicSubscribedByFiligranId: ServiceInstanceId;
+
+    beforeEach(async () => {
+      publicInstanceId = (
+        await TestHelper.serviceInstanceScene.create({ isPublic: true })
+      ).serviceInstance.id;
+      hiddenSubscribedByFiligranId = (
+        await TestHelper.serviceInstanceScene.create({
+          isPublic: false,
+          subscribedBy: [FILIGRAN],
+        })
+      ).serviceInstance.id;
+      publicSubscribedByFiligranId = (
+        await TestHelper.serviceInstanceScene.create({
+          isPublic: true,
+          subscribedBy: [FILIGRAN],
+        })
+      ).serviceInstance.id;
+    });
+
+    afterEach(async () => {
+      await TestHelper.serviceInstanceScene.cleanupAll();
+    });
+
+    it.each([
+      {
+        label: 'a non public service instance',
+        id: () => hiddenSubscribedByFiligranId,
+      },
+      {
+        label: 'a public service instance',
+        id: () => publicSubscribedByFiligranId,
+      },
+    ])(
+      'should be true for the organization that subscribes to $label',
+      async ({ id }) => {
+        // When
+        const result = await isServiceInstanceSubscribedByOrganization(
+          FILIGRAN,
+          id()
+        );
+
+        // Then
+        expect(result).toBe(true);
+      }
+    );
+
+    it.each([
+      {
+        label: 'a service instance another organization subscribes to',
+        id: () => hiddenSubscribedByFiligranId,
+        organizationId: SECOND_ORGANIZATION,
+      },
+      {
+        label: 'a public service instance nobody subscribes to',
+        id: () => publicInstanceId,
+        organizationId: FILIGRAN,
+      },
+      {
+        label: 'an unknown service instance',
+        id: () => uuidv4() as ServiceInstanceId,
+        organizationId: FILIGRAN,
+      },
+    ])('should be false for $label', async ({ id, organizationId }) => {
+      // When
+      const result = await isServiceInstanceSubscribedByOrganization(
+        organizationId,
+        id()
+      );
+
+      // Then
+      expect(result).toBe(false);
     });
   });
 });

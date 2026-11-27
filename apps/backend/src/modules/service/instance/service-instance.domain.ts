@@ -30,6 +30,7 @@ import { isUserAdminPlatform } from '../../../security/access';
 import {
   restrictServiceInstanceToAccessible,
   restrictServiceInstanceToPublic,
+  restrictServiceInstanceToSubscribedByOrganization,
 } from '../../../security/restriction/service-instance';
 import { buildTupleFilter } from '../../../utils/batch-query.util';
 import { UnknownErrorCode } from '../../../utils/error/error.code';
@@ -392,6 +393,29 @@ export const ServiceInstanceDomain = {
       .tap(restrictServiceInstanceToAccessible)
       .select('ServiceInstance.*')
       .first();
+  },
+
+  isServiceInstancePublic: async (
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<boolean> => {
+    const row = await db<ServiceInstance>('ServiceInstance')
+      .where('ServiceInstance.id', serviceInstanceId)
+      .tap(restrictServiceInstanceToPublic)
+      .select('ServiceInstance.id')
+      .first();
+    return row !== undefined;
+  },
+
+  isServiceInstanceSubscribedByOrganization: async (
+    organizationId: OrganizationId,
+    serviceInstanceId: ServiceInstanceId
+  ): Promise<boolean> => {
+    const row = await db<ServiceInstance>('ServiceInstance')
+      .where('ServiceInstance.id', serviceInstanceId)
+      .tap(restrictServiceInstanceToSubscribedByOrganization(organizationId))
+      .select('ServiceInstance.id')
+      .first();
+    return row !== undefined;
   },
 
   loadServiceInstancesByIds: async (
