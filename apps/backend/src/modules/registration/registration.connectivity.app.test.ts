@@ -644,7 +644,8 @@ describe('registration connectivity app', () => {
       await ageLastConnectivityCheck(platformId, tenantId, 1);
       const registered = await loadTenantConfiguration(platformId, tenantId);
       await PlatformConfigurationDomain.deactivateConfiguration(
-        registered!.service_instance_id
+        registered!.service_instance_id,
+        { explicit: true }
       );
 
       // When

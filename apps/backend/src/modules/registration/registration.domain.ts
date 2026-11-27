@@ -15,6 +15,7 @@ import {
   ServiceDefinitionIdentifier,
   ServiceInstanceCreationStatus,
 } from '../../__generated__/resolvers-types';
+import { withTransaction } from '../../context/database.context';
 import { requestContext } from '../../context/request.context';
 import { DocumentId } from '../../model/kanel/public/Document';
 import Organization, {
@@ -290,6 +291,10 @@ export const RegistrationDomain = {
     return serviceInstanceId;
   },
 
+  // Saves the registration of an existing platform, and moves it to the target organization when another one owns it.
+  // Another organization takes a registration over only when it was explicitly unregistered (unregistered_at): one a
+  // connectivity check or the platform itself marked inactive, or an active one, stays with its owner organization
+  // unless the user may manage platform registrations on it as well.
   refreshExistingPlatform: async ({
     configuration,
     serviceInstanceId,
@@ -304,34 +309,52 @@ export const RegistrationDomain = {
       organizationId: targetOrganizationId,
       requiredCapability: OrganizationCapability.ManagePlatformRegistration,
     });
-    const subscription = await SubscriptionDomain.loadSubscriptionBy({
-      service_instance_id: serviceInstanceId,
-    });
-    if (!subscription) {
-      throw new Error(ErrorCode.SubscriptionNotFound);
-    }
 
-    if (subscription.organization_id !== targetOrganizationId) {
-      const userOrganizations =
-        await OrganizationDomain.loadOrganizationsByUser(user.id);
-      if (userOrganizations.length > 2) {
-        throw new Error(ErrorCode.RegistrationOnAnotherOrganizationForbidden);
+    // The registration is locked before its status and its owner are read: of two organizations taking over the same
+    // unregistered platform at once, the second waits, then finds it active in the organization of the first one.
+    // withTransaction reuses the one of registerPlatform.
+    await withTransaction(async () => {
+      const registration =
+        await PlatformConfigurationDomain.lockConfiguration(serviceInstanceId);
+      if (!registration) {
+        throw new Error(ErrorCode.PlatformNotRegistered);
+      }
+      const subscription = await SubscriptionDomain.loadSubscriptionBy({
+        service_instance_id: serviceInstanceId,
+      });
+      if (!subscription) {
+        throw new Error(ErrorCode.SubscriptionNotFound);
       }
 
-      await securityGuard.assertUserIsAllowedOnOrganization(user, {
-        organizationId: subscription.organization_id,
-        requiredCapability: OrganizationCapability.ManagePlatformRegistration,
-      });
+      if (subscription.organization_id !== targetOrganizationId) {
+        const userOrganizations =
+          await OrganizationDomain.loadOrganizationsByUser(user.id);
+        if (userOrganizations.length > 2) {
+          throw new Error(ErrorCode.RegistrationOnAnotherOrganizationForbidden);
+        }
 
-      await SubscriptionDomain.transferSubscriptionToOrganization({
-        subscriptionId: subscription.id,
-        organizationId: targetOrganizationId,
-      });
-    }
+        const isExplicitlyUnregistered =
+          registration.status === PlatformConfigurationStatus.Inactive &&
+          registration.unregistered_at !== null;
+        if (!isExplicitlyUnregistered) {
+          await securityGuard.assertUserIsAllowedOnOrganization(user, {
+            organizationId: subscription.organization_id,
+            requiredCapability:
+              OrganizationCapability.ManagePlatformRegistration,
+          });
+        }
 
-    await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
-      ...configuration,
-      status: PlatformConfigurationStatus.Active,
+        await SubscriptionDomain.transferSubscriptionToOrganization({
+          subscriptionId: subscription.id,
+          organizationId: targetOrganizationId,
+        });
+      }
+
+      // Active again: updateConfiguration clears unregistered_at.
+      await PlatformConfigurationDomain.updateConfiguration(serviceInstanceId, {
+        ...configuration,
+        status: PlatformConfigurationStatus.Active,
+      });
     });
   },
 

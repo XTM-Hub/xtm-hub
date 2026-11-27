@@ -24,6 +24,7 @@ import {
 import { requestContext } from '../../context/request.context';
 import DeploymentRequest from '../../model/kanel/public/DeploymentRequest';
 import { OrganizationId } from '../../model/kanel/public/Organization';
+import PlatformConfiguration from '../../model/kanel/public/PlatformConfiguration';
 import { ServiceInstanceId } from '../../model/kanel/public/ServiceInstance';
 import { SubscriptionId } from '../../model/kanel/public/Subscription';
 import { PortalContext } from '../../model/portal-context';
@@ -155,8 +156,19 @@ describe('registration domain', () => {
     };
     const serviceInstanceId = uuidv4() as ServiceInstanceId;
     const targetOrganizationId = uuidv4() as OrganizationId;
+    const buildLockedRegistration = (
+      fields: Partial<PlatformConfiguration> = {}
+    ): PlatformConfiguration =>
+      ({
+        service_instance_id: serviceInstanceId,
+        platform_id: configuration.platform_id,
+        status: PlatformConfigurationStatus.Active,
+        unregistered_at: null,
+        ...fields,
+      }) as PlatformConfiguration;
 
     let assertUserIsAllowedOnOrganizationSpy: MockInstance;
+    let lockConfigurationSpy: MockInstance;
     let loadSubscriptionBySpy: MockInstance;
     let loadOrganizationsByUserSpy: MockInstance;
     let transferSubscriptionToOrganizationSpy: MockInstance;
@@ -167,6 +179,11 @@ describe('registration domain', () => {
         securityGuard,
         'assertUserIsAllowedOnOrganization'
       );
+
+      // The row is locked and read in a transaction: its owner and its status come from what the lock returns
+      lockConfigurationSpy = vi
+        .spyOn(PlatformConfigurationDomain, 'lockConfiguration')
+        .mockResolvedValue(buildLockedRegistration());
 
       loadSubscriptionBySpy = vi.spyOn(
         SubscriptionDomain,
@@ -201,6 +218,20 @@ describe('registration domain', () => {
       });
 
       await expect(call).rejects.toThrow('ERROR');
+      expect(lockConfigurationSpy).not.toHaveBeenCalled();
+    });
+
+    it('should throw an error when the registration does not exist', async () => {
+      assertUserIsAllowedOnOrganizationSpy.mockResolvedValue({});
+      lockConfigurationSpy.mockResolvedValue(undefined);
+
+      const call = RegistrationDomain.refreshExistingPlatform({
+        configuration,
+        serviceInstanceId,
+        targetOrganizationId,
+      });
+
+      await expect(call).rejects.toThrow(ErrorCode.PlatformNotRegistered);
     });
 
     it('should throw an error when subscription is not found', async () => {
@@ -287,6 +318,123 @@ describe('registration domain', () => {
         await expect(call).rejects.toThrow(
           ErrorCode.MissingCapabilityOnOrganization
         );
+      });
+
+      it('should lock the registration before reading its owner, and only for the transaction of the takeover', async () => {
+        assertUserIsAllowedOnOrganizationSpy.mockResolvedValue({});
+
+        await RegistrationDomain.refreshExistingPlatform({
+          configuration,
+          serviceInstanceId,
+          targetOrganizationId,
+        });
+
+        expect(lockConfigurationSpy).toHaveBeenCalledExactlyOnceWith(
+          serviceInstanceId
+        );
+        expect(lockConfigurationSpy.mock.invocationCallOrder[0]).toBeLessThan(
+          loadSubscriptionBySpy.mock.invocationCallOrder[0]!
+        );
+      });
+
+      describe('when the user cannot manage platform registrations on the owner organization', () => {
+        beforeEach(() => {
+          assertUserIsAllowedOnOrganizationSpy.mockImplementation(
+            (
+              context: PortalContext,
+              { organizationId }: { organizationId: OrganizationId }
+            ) => {
+              if (organizationId === targetOrganizationId) {
+                return {};
+              }
+
+              throw new Error(ErrorCode.UserIsNotInOrganization);
+            }
+          );
+        });
+
+        it.each([
+          {
+            name: 'is active',
+            registration: {
+              status: PlatformConfigurationStatus.Active,
+              unregistered_at: null,
+            },
+          },
+          {
+            name: 'was deactivated without an explicit unregistration',
+            registration: {
+              status: PlatformConfigurationStatus.Inactive,
+              unregistered_at: null,
+            },
+          },
+        ])(
+          'should refuse the takeover when the registration $name',
+          async ({ registration }) => {
+            lockConfigurationSpy.mockResolvedValue(
+              buildLockedRegistration(registration)
+            );
+
+            const call = RegistrationDomain.refreshExistingPlatform({
+              configuration,
+              serviceInstanceId,
+              targetOrganizationId,
+            });
+
+            await expect(call).rejects.toThrow(
+              ErrorCode.UserIsNotInOrganization
+            );
+            expect(
+              transferSubscriptionToOrganizationSpy
+            ).not.toHaveBeenCalled();
+            expect(updateConfigurationSpy).not.toHaveBeenCalled();
+          }
+        );
+
+        it('should let the user take over a registration that was explicitly unregistered', async () => {
+          lockConfigurationSpy.mockResolvedValue(
+            buildLockedRegistration({
+              status: PlatformConfigurationStatus.Inactive,
+              unregistered_at: new Date(),
+            })
+          );
+
+          await RegistrationDomain.refreshExistingPlatform({
+            configuration,
+            serviceInstanceId,
+            targetOrganizationId,
+          });
+
+          expect(transferSubscriptionToOrganizationSpy).toHaveBeenCalledWith({
+            subscriptionId,
+            organizationId: targetOrganizationId,
+          });
+          expect(updateConfigurationSpy).toHaveBeenCalledWith(
+            serviceInstanceId,
+            { ...configuration, status: PlatformConfigurationStatus.Active }
+          );
+        });
+
+        it('should still refuse a user who belongs to more than 2 organizations when the registration was explicitly unregistered', async () => {
+          lockConfigurationSpy.mockResolvedValue(
+            buildLockedRegistration({
+              status: PlatformConfigurationStatus.Inactive,
+              unregistered_at: new Date(),
+            })
+          );
+          loadOrganizationsByUserSpy.mockResolvedValue([{}, {}, {}]);
+
+          const call = RegistrationDomain.refreshExistingPlatform({
+            configuration,
+            serviceInstanceId,
+            targetOrganizationId,
+          });
+
+          await expect(call).rejects.toThrow(
+            ErrorCode.RegistrationOnAnotherOrganizationForbidden
+          );
+          expect(transferSubscriptionToOrganizationSpy).not.toHaveBeenCalled();
+        });
       });
 
       it('should transfer the subscription and refresh configuration when user is allowed', async () => {

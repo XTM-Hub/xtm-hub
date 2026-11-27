@@ -7,6 +7,7 @@ import {
   PlatformContract,
   PlatformIdentifier,
 } from '../../../__generated__/resolvers-types';
+import { databaseContext } from '../../../context/database.context';
 import { OrganizationId } from '../../../model/kanel/public/Organization';
 import PlatformConfiguration, {
   PlatformConfigurationMutator,
@@ -15,7 +16,7 @@ import ServiceDefinition from '../../../model/kanel/public/ServiceDefinition';
 import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import { UserId } from '../../../model/kanel/public/User';
 import { logApp } from '../../../utils/app-logger.util';
-import { ErrorCode } from '../../../utils/error/error.code';
+import { ErrorCode, UnknownErrorCode } from '../../../utils/error/error.code';
 import { formatRawObject } from '../../../utils/query-raw.util';
 import { isUuid } from '../../../utils/uuid.util';
 import type { PlatformConfigurationInput } from '../registration.domain';
@@ -326,24 +327,54 @@ export const PlatformConfigurationDomain = {
     return row ? resolvePlatformFromJoinedRow(row) : undefined;
   },
 
-  // Only an active registration moves to inactive, so of two concurrent calls only the first gets true.
-  deactivateConfiguration: async (
+  // Locks the registration until the transaction ends and returns it as it is once the lock is held: a check made on
+  // the returned row sees what a concurrent takeover or unregistration committed. The caller opens the transaction
+  // right before taking the lock, so the lock is never released at once, and a missing transaction fails loudly
+  // instead of locking nothing. FOR NO KEY UPDATE makes a concurrent UPDATE of the row wait, without blocking the
+  // inserts of rows that reference it.
+  lockConfiguration: async (
     serviceInstanceId: ServiceInstanceId
+  ): Promise<PlatformConfiguration | undefined> => {
+    if (!databaseContext.isInTransaction()) {
+      throw new Error(UnknownErrorCode.UnknownError);
+    }
+    return db<PlatformConfiguration>('PlatformConfiguration')
+      .select('*')
+      .where('service_instance_id', '=', serviceInstanceId)
+      .forNoKeyUpdate()
+      .first();
+  },
+
+  // Only an active registration moves to inactive, so of two concurrent calls only the first gets true. explicit marks
+  // the unregistration as asked for by the owner organization or a platform admin: only then may another organization
+  // connect the platform. Any other deactivation (connectivity check, platform reporting itself removed) leaves the
+  // marker null, and the registration stays with its owner organization.
+  deactivateConfiguration: async (
+    serviceInstanceId: ServiceInstanceId,
+    { explicit }: { explicit: boolean }
   ): Promise<boolean> => {
     const updated = await db<PlatformConfiguration>('PlatformConfiguration')
-      .update({ status: PlatformConfigurationStatus.Inactive })
+      .update({
+        status: PlatformConfigurationStatus.Inactive,
+        ...(explicit ? { unregistered_at: new Date() } : {}),
+      })
       .where('service_instance_id', '=', serviceInstanceId)
       .where('status', '=', PlatformConfigurationStatus.Active)
       .returning('service_instance_id');
     return updated.length > 0;
   },
 
+  // A registration that becomes active again is no longer unregistered.
   updateConfiguration: async (
     serviceInstanceId: ServiceInstanceId,
     mutator: PlatformConfigurationMutator
   ) => {
     await db<PlatformConfiguration>('PlatformConfiguration')
-      .update(mutator)
+      .update(
+        mutator.status === PlatformConfigurationStatus.Active
+          ? { ...mutator, unregistered_at: null }
+          : mutator
+      )
       .where('service_instance_id', '=', serviceInstanceId);
   },
 
