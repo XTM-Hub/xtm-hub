@@ -2096,6 +2096,64 @@ describe('newsFeedApp', () => {
       });
     });
 
+    it('should use the release date, not the call time, as the creation date of the item', async () => {
+      // Given
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(NOW);
+      const releasedAt = new Date('2026-11-17T09:30:41.123Z');
+
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+        releasedAt,
+      });
+
+      // Then
+      const [item] = await loadGithubReleaseItems();
+      expect(item).toMatchObject({
+        key: NON_LTS_RELEASE_VERSION,
+        creation_date: releasedAt,
+      });
+    });
+
+    it('should store the release date given with an offset as the matching instant', async () => {
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+        releasedAt: new Date('2026-11-17T11:30:00+02:00'),
+      });
+
+      // Then
+      const [item] = await loadGithubReleaseItems();
+      expect(item?.creation_date.toISOString()).toBe(
+        '2026-11-17T09:30:00.000Z'
+      );
+    });
+
+    it('should not update the creation date of an existing item when the version is sent again with a release date', async () => {
+      // Given
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(NOW);
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+      });
+
+      // When
+      await NewsFeedApp.createGithubReleaseNewsFeedItem({
+        product: PlatformIdentifier.Opencti,
+        version: NON_LTS_RELEASE_VERSION,
+        releasedAt: new Date('2026-11-17T09:30:00.000Z'),
+      });
+
+      // Then
+      const items = await loadGithubReleaseItems();
+      expect(items).toHaveLength(1);
+      expect(items[0]).toMatchObject({ creation_date: NOW });
+    });
+
     it('should neither duplicate the item nor provision it again when the version is sent twice', async () => {
       // Given
       await createPlatformWithVersion(GITHUB_RELEASE_REQUIRED_VERSION);

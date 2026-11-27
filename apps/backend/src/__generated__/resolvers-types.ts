@@ -1615,6 +1615,7 @@ export type MutationLoginArgs = {
 
 export type MutationNewProductVersionArgs = {
   product: PlatformIdentifier;
+  releasedAt?: InputMaybe<Scalars['Date']['input']>;
   version: Scalars['String']['input'];
 };
 

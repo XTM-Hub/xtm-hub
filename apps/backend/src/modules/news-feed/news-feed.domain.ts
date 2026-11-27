@@ -95,6 +95,7 @@ const buildBlogpostMetadata = (
 const insertNewsFeedItem = async ({
   item,
   buildMetadata,
+  creationDate = new Date(),
 }: {
   item: Pick<
     NewsFeedItemInitializer,
@@ -103,10 +104,11 @@ const insertNewsFeedItem = async ({
   buildMetadata: (
     id: NewsFeedItemId
   ) => { key: NewsFeedItemMetadataKey; value: string }[];
+  creationDate?: Date;
 }): Promise<NewsFeedItem> => {
   const id = uuidv4() as NewsFeedItemId;
   const [newsFeedItem] = await db<NewsFeedItem>('NewsFeedItem')
-    .insert({ id, ...item, creation_date: new Date() })
+    .insert({ id, ...item, creation_date: creationDate })
     .returning('*');
 
   if (!newsFeedItem) {
@@ -277,12 +279,15 @@ export const NewsFeedDomain = {
     platformIdentifier,
     title,
     productVersion,
+    creationDate,
   }: {
     platformIdentifier: PlatformIdentifier;
     title: string;
     productVersion: string;
+    creationDate?: Date;
   }): Promise<NewsFeedItem> =>
     insertNewsFeedItem({
+      creationDate,
       item: {
         type: NewsFeedItemType.GithubRelease,
         platform_identifier: platformIdentifier,

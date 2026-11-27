@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import {
   ManifestType,
   PlatformIdentifier,
@@ -19,14 +20,43 @@ import { ManageProductVersionDomain } from './manage-product-version.domain';
 // (e.g. the public REST endpoints) still get every registered version.
 const LATEST_PRODUCT_VERSIONS_LIMIT = 5;
 
+// How far ahead of the Hub's clock a release date may be: the n8n caller and the Hub do not share a clock.
+const MAX_CLOCK_SKEW_MS = 5 * 60 * 1000;
+
+const parseReleasedAt = (releasedAt: unknown): Date | undefined => {
+  if (releasedAt === undefined || releasedAt === null) {
+    return undefined;
+  }
+
+  // The Date scalar has no serializer: it lets any JSON value through, so the value is checked here. The offset is
+  // required, a zone-less string would be read in the server's time zone.
+  const parsed = z.iso.datetime({ offset: true }).safeParse(releasedAt);
+  if (!parsed.success) {
+    throw BadRequestError(BadRequestErrorCode.InvalidReleaseDate, {
+      detail: 'releasedAt must be an ISO 8601 date-time with a time zone',
+    });
+  }
+
+  const date = new Date(parsed.data);
+  if (date.getTime() > Date.now() + MAX_CLOCK_SKEW_MS) {
+    throw BadRequestError(BadRequestErrorCode.InvalidReleaseDate, {
+      detail: "releasedAt is more than 5 minutes ahead of the Hub's clock",
+    });
+  }
+  return date;
+};
+
 export const ManageProductVersionApp = {
   handleNewProductVersion: async ({
     product,
     version,
+    releasedAt,
   }: {
     product: PlatformIdentifier;
     version: string;
+    releasedAt?: unknown;
   }): Promise<void> => {
+    const releaseDate = parseReleasedAt(releasedAt);
     ManifestFragmentHelper.validateProductVersion(version);
     // isLtsVersion only reads a lowercase suffix: -LTS.8 would be routed as non-LTS
     if (!isValidVersion(version)) {
@@ -52,6 +82,7 @@ export const ManageProductVersionApp = {
     void NewsFeedApp.createGithubReleaseNewsFeedItem({
       product,
       version,
+      releasedAt: releaseDate,
     }).catch((error) =>
       logApp.error('Unable to create the GitHub release news feed item', {
         error,

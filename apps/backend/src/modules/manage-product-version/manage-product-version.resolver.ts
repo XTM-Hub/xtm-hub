@@ -21,11 +21,12 @@ class ManageProductVersionMutations {
   @Guarded(systemCallerGuard([PortalCapability.GenerateManifest]))
   static readonly newProductVersion: NonNullable<
     MutationResolvers['newProductVersion']
-  > = async (_, { product, version }) => {
+  > = async (_, { product, version, releasedAt }) => {
     try {
       await ManageProductVersionApp.handleNewProductVersion({
         product,
         version,
+        releasedAt,
       });
       return { success: true };
     } catch (error) {
