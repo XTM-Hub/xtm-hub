@@ -1,0 +1,51 @@
+meta {
+  name: consumeProvisionedNewsFeedItems
+  type: graphql
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/graphql-api
+  body: graphql
+  auth: none
+}
+
+headers {
+  XTM-Hub-Platform-Id: {{platformId}}
+  XTM-Hub-Platform-Token: {{platformToken}}
+  ~XTM-Hub-Platform-Assertion: {{platformAssertion}}
+}
+
+body:graphql {
+  mutation ConsumeProvisionedNewsFeedItems {
+    consumeProvisionedNewsFeedItems {
+      news_feed_items {
+        id
+        is_deleted
+        title
+        type
+        tags
+        metadata {
+          key
+          value
+        }
+        creation_date
+      }
+      available_news_feed_types
+    }
+  }
+}
+
+docs {
+  Called by a registered platform (OpenCTI, OpenAEV) to fetch the news feed items provisioned for it since its last
+  call. The items are consumed: a second call returns only the newer ones.
+
+  A platform sends either the assertion header or the token headers:
+  - XTM-Hub-Platform-Assertion: a JWS signed by the key the platform enrolled (disabled here, enable it and disable the
+    token headers to try it). An assertion authenticates one request: sent again, it is refused.
+  - XTM-Hub-Platform-Id and XTM-Hub-Platform-Token, for a platform that has not enrolled a key yet.
+
+  The registration must be active and its organization subscribed. Answers UNAUTHENTICATED without valid credentials,
+  PLATFORM_ASSERTION_INVALID or PLATFORM_KEY_MISMATCH for a refused assertion, and PLATFORM_TOKEN_REFUSED for the token
+  of a platform that enrolled a key.
+}

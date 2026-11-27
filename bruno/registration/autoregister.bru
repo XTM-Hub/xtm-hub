@@ -13,6 +13,7 @@ post {
 headers {
   XTM-Hub-Platform-Token: 
   XTM-Hub-Platform-Id: {{platformId}}
+  ~XTM-Hub-Platform-Assertion: {{platformAssertion}}
 }
 
 body:graphql {
@@ -49,4 +50,8 @@ docs {
   In script/pre-request, set the correct value for platformId
   in Headers, set the platform token
   
+  A platform sends either the assertion header or the token headers, never both on purpose: with
+  XTM-Hub-Platform-Assertion (a JWS signed by the key it enrolled, disabled here), the token headers are ignored and a
+  refused assertion is never retried as a token. A platform that enrolled a key gets PLATFORM_TOKEN_REFUSED for its
+  token. This mutation still reads the platform token of a trial deployment, so it needs the token headers today.
 }

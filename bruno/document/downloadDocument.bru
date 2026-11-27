@@ -1,0 +1,34 @@
+meta {
+  name: downloadDocument
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/document/get/{{serviceInstanceId}}/{{documentId}}
+  body: none
+  auth: none
+}
+
+headers {
+  XTM-Hub-User-Platform-Token: {{userPlatformToken}}
+  XTM-Hub-Platform-Id: {{platformId}}
+  XTM-Hub-Platform-Token: {{platformToken}}
+  ~XTM-Hub-Platform-Assertion: {{platformAssertion}}
+}
+
+docs {
+  Downloads the file of a document (add ?attach=true to get it as an attachment). The user comes from the session
+  cookie, or from XTM-Hub-User-Platform-Token for a platform that downloads for its user: without either, 401.
+
+  A platform sends either the assertion header or the token headers:
+  - XTM-Hub-Platform-Assertion (disabled here): a JWS signed by the key the platform enrolled, whose htu claim must be
+    exactly the path of this request (/document/get/<serviceInstanceId>/<documentId>), so it opens no other document.
+    Checked whenever present, and sent once only.
+  - XTM-Hub-Platform-Id and XTM-Hub-Platform-Token: checked only with a user platform token and when the platform token
+    is present, so that older versions without it keep working. The registration must be active.
+
+  A refused platform answers 403 { "message": "platform registration is not valid" }, with a "code"
+  (PLATFORM_ASSERTION_INVALID, PLATFORM_KEY_MISMATCH, PLATFORM_TOKEN_REFUSED) when the assertion or the token of a
+  platform that enrolled a key is refused.
+}
