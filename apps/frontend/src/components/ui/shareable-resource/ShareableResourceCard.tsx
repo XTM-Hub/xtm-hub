@@ -37,6 +37,8 @@ interface ShareableResourceCardProps {
   extraContent?: ReactNode;
   serviceInstance: ShareableServiceInstance;
   publicPath?: boolean;
+  /** Platform and library line above the title: for cards shown outside a library (home). */
+  showOverview?: boolean;
 }
 
 const FOOTER_VERSIONS_INTEGRATION_TYPES: string[] = [IntegrationType.Connector];
@@ -52,6 +54,7 @@ const ShareableResourceCard = ({
   extraContent,
   serviceInstance,
   publicPath = false,
+  showOverview = false,
 }: ShareableResourceCardProps) => {
   const { save } = useScrollPosition();
   const handleClick = () => {
@@ -78,6 +81,7 @@ const ShareableResourceCard = ({
         <ShareableResourceCardHeader
           document={document}
           serviceInstanceId={serviceInstance.id}
+          showOverview={showOverview}
         />
         <ShareableResourceCardDescription
           description={document.short_description}

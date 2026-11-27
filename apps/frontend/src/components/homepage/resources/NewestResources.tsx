@@ -3,6 +3,7 @@ import { getTranslate } from '@/hooks/get-translate';
 import { PublicLocale } from '@/i18n/config';
 import { serverGraphqlFetch } from '@/lib/server-graphql-fetch';
 import { PUBLIC_PAGE_REVALIDATE_SECONDS } from '@/utils/constant';
+import { getBaseUrl } from '@/utils/generate-metadata';
 import {
   NewestDocumentsQueryDocument,
   NewestDocumentsQueryQuery,
@@ -23,6 +24,7 @@ const NewestResources = async ({
   isAuthenticated = false,
   paramsLocale,
 }: NewestResourcesProps) => {
+  const baseUrl = await getBaseUrl();
   const t = await getTranslate('HomePage.XtmNewestResources');
 
   const data = await serverGraphqlFetch<
@@ -41,6 +43,7 @@ const NewestResources = async ({
     <HomepageResourceList
       title={t('Title')}
       documents={data.newestDocuments}
+      baseUrl={baseUrl}
       isAuthenticated={isAuthenticated}
       paramsLocale={paramsLocale}
     />
