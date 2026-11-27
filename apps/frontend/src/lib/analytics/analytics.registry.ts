@@ -49,6 +49,18 @@ export const ANALYTICS_ELEMENT_IDS = {
     action: 'Confirm news feed item deletion',
   },
   admin_news_feed_item_open: { action: 'Open news feed item content' },
+  admin_organization_administrator_copy: {
+    action: 'Copy organization administrator email',
+  },
+  admin_organization_administrators_close: {
+    action: 'Close organization administrators',
+  },
+  admin_organization_administrators_copy: {
+    action: 'Copy all organization administrator emails',
+  },
+  admin_organization_administrators_open: {
+    action: 'Open organization administrators',
+  },
   admin_organization_create: { action: 'Create organization' },
   admin_organization_delete: { action: 'Delete organization' },
   admin_organization_deletion_confirm: {
@@ -56,6 +68,7 @@ export const ANALYTICS_ELEMENT_IDS = {
   },
   admin_organization_edit: { action: 'Edit organization' },
   admin_organization_form_submit: { action: 'Save organization' },
+  admin_organization_members_open: { action: 'Open organization members' },
   admin_organization_services_open: {
     action: 'Open organization subscribed services',
   },

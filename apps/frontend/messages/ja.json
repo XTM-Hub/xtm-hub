@@ -830,6 +830,10 @@
     "SearchOrganizationWithEmail": "組織をEメールで検索..."
   },
   "OrganizationForm": {
+    "Administrators": "管理者",
+    "AdministratorsPopoverTitle": "管理者 ({count})",
+    "CopyAdministratorEmail": "{email} をコピー",
+    "CopyAll": "すべてコピー",
     "CreateOrganization": "組織を作成",
     "DeleteOrganization": "組織を削除する",
     "Domains": "ドメイン",
@@ -841,8 +845,13 @@
       "DuplicateName": "この名前の組織は既に存在する",
       "Name": "組織名は必須です"
     },
+    "Members": "メンバー",
     "Name": "組織名",
-    "SureDeleteOrganization": "本当にこの組織 {organizationName} を削除しますか？この操作は取り消せません。"
+    "NoAdministrator": "管理者なし",
+    "OtherAdministrators": "+{count} {count, plural, other {人の他の管理者}}",
+    "SeeMembers": "メンバーを見る",
+    "SureDeleteOrganization": "本当にこの組織 {organizationName} を削除しますか？この操作は取り消せません。",
+    "Total": "合計"
   },
   "OrganizationInServiceAction": {
     "AddOrganization": "組織を",

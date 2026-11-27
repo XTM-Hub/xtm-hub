@@ -28,6 +28,31 @@ query OrganizationsList(
   }
 }
 
+query OrganizationsAdminList(
+  $count: Int
+  $cursor: ID
+  $orderBy: OrganizationOrdering!
+  $orderMode: OrderingMode!
+  $searchTerm: String
+) {
+  organizations(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...OrganizationItem
+        administrator_emails
+        members_count
+      }
+    }
+  }
+}
+
 query UserOrganizations {
   userOrganizations {
     id

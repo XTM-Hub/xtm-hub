@@ -2,7 +2,7 @@
 import { CreateOrganization } from '@/components/organization/CreateOrganization';
 import { DeleteOrganization } from '@/components/organization/DeleteOrganization';
 import { EditOrganization } from '@/components/organization/EditOrganization';
-import { useOrganizations } from '@/components/organization/Organization.service';
+import { OrganizationAdministrators } from '@/components/organization/OrganizationAdministrators';
 import { useOrganizationListLocalstorage } from '@/components/organization/organization-list-localstorage';
 import { IconActions, IconActionsItem } from '@/components/ui/IconActions';
 import {
@@ -15,32 +15,46 @@ import {
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
+import { portalGraphqlClient } from '@/lib/graphql-client';
 import { getDataTableLabels } from '@/utils/design-system/data-table';
-import { Chip, SearchField } from '@filigran/design-system';
+import { Chip, Link, SearchField } from '@filigran/design-system';
 import { MoreVertIcon } from '@filigran/icon';
 import {
   OrderingMode,
-  OrganizationItemFragment,
   OrganizationOrdering,
+  type OrganizationsAdminListQuery,
+  type OrganizationsAdminListQueryVariables,
+  useOrganizationsAdminListQuery,
 } from '@graphql/generated';
-import { ColumnDef } from '@tanstack/react-table';
+import { adminOrganizationsKeys } from '@graphql/organization/organization.keys';
+import { keepPreviousData } from '@tanstack/react-query';
+import { ColumnDef, Row } from '@tanstack/react-table';
+import NextLink from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+
+type OrganizationAdminRow =
+  OrganizationsAdminListQuery['organizations']['edges'][number]['node'];
+
+const organizationPath = (pathname: string, organizationId: string) =>
+  `${pathname}/${encodeURIComponent(organizationId)}`;
 
 const OrganizationList = () => {
   const t = useTranslate();
   const router = useRouter();
   const pathname = usePathname();
   const [editOrganization, setEditOrganization] = useState<
-    OrganizationItemFragment | undefined
+    OrganizationAdminRow | undefined
   >(undefined);
   const [deleteOrganization, setDeleteOrganization] = useState<
-    OrganizationItemFragment | undefined
+    OrganizationAdminRow | undefined
   >(undefined);
-  const columns = useMemo<ColumnDef<OrganizationItemFragment>[]>(
+  const canManageOrganizations = useAdminByPass();
+  const columns = useMemo<ColumnDef<OrganizationAdminRow>[]>(
     () => [
       {
         accessorKey: 'name',
@@ -69,42 +83,84 @@ const OrganizationList = () => {
         },
       },
       {
-        id: 'actions',
-        size: 100,
-        enableHiding: false,
+        id: 'administrators',
+        header: t('OrganizationForm.Administrators'),
+        size: 300,
         enableSorting: false,
-        enableResizing: false,
         cell: ({ row }) => (
-          <div className="flex items-center justify-end">
-            <IconActions
-              analyticsId="list_row_actions_open"
-              aria-label={t('Utils.OpenMenu')}
-              icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
-              <IconActionsItem
-                {...analyticsId('admin_organization_services_open')}
-                onClick={() => {
-                  router.push(
-                    `${pathname}/${encodeURIComponent(row.original.id)}/subscribed-services`
-                  );
-                }}>
-                {t('Service.SubscribedServices')}
-              </IconActionsItem>
-              <IconActionsItem
-                {...analyticsId('admin_organization_edit')}
-                onClick={() => setEditOrganization(row.original)}>
-                {t('Utils.Update')}
-              </IconActionsItem>
-              <IconActionsItem
-                {...analyticsId('admin_organization_delete')}
-                onClick={() => setDeleteOrganization(row.original)}>
-                {t('Utils.Delete')}
-              </IconActionsItem>
-            </IconActions>
-          </div>
+          <OrganizationAdministrators
+            emails={row.original.administrator_emails}
+          />
         ),
       },
+      {
+        id: 'members',
+        header: t('OrganizationForm.Members'),
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Link
+            asChild
+            size="compact">
+            <NextLink
+              {...analyticsId('admin_organization_members_open')}
+              href={`${organizationPath(pathname, row.original.id)}/members`}>
+              {t('OrganizationForm.SeeMembers')}
+            </NextLink>
+          </Link>
+        ),
+      },
+      {
+        accessorKey: 'members_count',
+        id: 'members_count',
+        header: t('OrganizationForm.Total'),
+        enableSorting: false,
+        cell: ({ row }) => {
+          return <>{row.original.members_count}</>;
+        },
+      },
+      ...(canManageOrganizations
+        ? [
+            {
+              id: 'actions',
+              size: 100,
+              enableHiding: false,
+              enableSorting: false,
+              enableResizing: false,
+              cell: ({ row }: { row: Row<OrganizationAdminRow> }) => (
+                <div className="flex items-center justify-end">
+                  <IconActions
+                    analyticsId="list_row_actions_open"
+                    aria-label={t('Utils.OpenMenu')}
+                    icon={
+                      <MoreVertIcon className="h-4 w-4 text-icon-highlight" />
+                    }>
+                    <IconActionsItem
+                      {...analyticsId('admin_organization_services_open')}
+                      onClick={() => {
+                        router.push(
+                          `${organizationPath(pathname, row.original.id)}/subscribed-services`
+                        );
+                      }}>
+                      {t('Service.SubscribedServices')}
+                    </IconActionsItem>
+                    <IconActionsItem
+                      {...analyticsId('admin_organization_edit')}
+                      onClick={() => setEditOrganization(row.original)}>
+                      {t('Utils.Update')}
+                    </IconActionsItem>
+                    <IconActionsItem
+                      {...analyticsId('admin_organization_delete')}
+                      onClick={() => setDeleteOrganization(row.original)}>
+                      {t('Utils.Delete')}
+                    </IconActionsItem>
+                  </IconActions>
+                </div>
+              ),
+            },
+          ]
+        : []),
     ],
-    [pathname, router, t]
+    [canManageOrganizations, pathname, router, t]
   );
   const {
     pageSize,
@@ -129,14 +185,25 @@ const OrganizationList = () => {
       setPageSize,
     });
 
-  const { organizations, totalCount, isLoading, isError, isPlaceholderData } =
-    useOrganizations({
-      count: pagination.pageSize,
-      cursor,
-      orderMode,
-      orderBy,
-      searchTerm,
+  const variables: OrganizationsAdminListQueryVariables = {
+    count: pagination.pageSize,
+    cursor,
+    orderMode,
+    orderBy,
+    searchTerm,
+  };
+  // Keeps the previous result while other variables load: isPlaceholderData flags it as stale.
+  const { data, isLoading, isError, isPlaceholderData } =
+    useOrganizationsAdminListQuery(portalGraphqlClient, variables, {
+      queryKey: adminOrganizationsKeys.list(variables),
+      placeholderData: keepPreviousData,
     });
+
+  const organizations = useMemo<OrganizationAdminRow[]>(
+    () => (data?.organizations.edges ?? []).map(({ node }) => node),
+    [data]
+  );
+  const totalCount = data?.organizations.totalCount ?? 0;
 
   // Deleting the last row of the last page leaves it empty once the list is fetched again.
   useEffect(() => {
@@ -218,7 +285,7 @@ const OrganizationList = () => {
             actions={
               <>
                 <DataTableHeadBarOptions />
-                <CreateOrganization />
+                {canManageOrganizations && <CreateOrganization />}
               </>
             }
           />
@@ -240,7 +307,7 @@ const OrganizationList = () => {
           columnOrder,
           columnVisibility,
           columnPinning: {
-            right: ['actions'],
+            right: canManageOrganizations ? ['actions'] : [],
           },
         }}
       />

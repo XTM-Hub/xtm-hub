@@ -6,13 +6,14 @@ import testRender from '@/utils/test/test-render';
 import {
   type MeOrganizationsQuery,
   OrderingMode,
-  type OrganizationItemFragment,
   OrganizationOrdering,
-  type OrganizationsListQuery,
-  type OrganizationsListQueryVariables,
+  type OrganizationsAdminListQuery,
+  type OrganizationsAdminListQueryVariables,
+  PortalCapability,
 } from '@graphql/generated';
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { usePathname } from 'next/navigation';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ORGANIZATION_ID = 'organization-filigran';
@@ -23,11 +24,19 @@ const NEW_DOMAIN = 'acme.com';
 const SEARCH_TERM = 'fili';
 const SERVER_ERROR = 'ORGANIZATION_NOT_FOUND';
 const PERSONAL_ORGANIZATION_ID = 'organization-personal';
+const ORGANIZATIONS_PATH = '/app/admin/organizations';
+const MEMBERS_COUNT = 12;
+const FIRST_ADMINISTRATOR_EMAIL = 'alice@filigran.io';
+const SECOND_ADMINISTRATOR_EMAIL = 'bob@filigran.io';
 const DEFAULT_PAGE_SIZE = 50;
 const STORED_PAGE_SIZE = 10;
 const SEVERAL_PAGES_COUNT = DEFAULT_PAGE_SIZE * 2;
 // DataTable renders this many skeleton rows under its header row while loading.
 const LOADING_ROW_COUNT = 30;
+const BYPASS_USER = { capabilities: [{ name: PortalCapability.Bypass }] };
+const READ_ORGANIZATION_MEMBERS_USER = {
+  capabilities: [{ name: PortalCapability.ReadOrganizationMembers }],
+};
 
 type MutationOutcome = 'success' | 'error' | 'pending';
 
@@ -66,7 +75,7 @@ const mocks = vi.hoisted(() => {
   return {
     state,
     listOrganizations: vi.fn(),
-    useOrganizationsListQuery: vi.fn(),
+    useOrganizationsAdminListQuery: vi.fn(),
     fetchMeOrganizations: vi.fn(),
     useMeOrganizationsQuery: vi.fn(),
     createOrganization,
@@ -81,7 +90,7 @@ vi.mock('@graphql/generated', async (importOriginal) => {
     await import('@/utils/test/mock-generated-query');
   return {
     ...(await mockGeneratedQueryHooks(importOriginal, {
-      useOrganizationsListQuery: mocks.useOrganizationsListQuery,
+      useOrganizationsAdminListQuery: mocks.useOrganizationsAdminListQuery,
       useMeOrganizationsQuery: mocks.useMeOrganizationsQuery,
     })),
     // The responses are built on mutate, once the fixtures below exist.
@@ -100,13 +109,18 @@ vi.mock('@graphql/generated', async (importOriginal) => {
   };
 });
 
+type AdminOrganization =
+  OrganizationsAdminListQuery['organizations']['edges'][number]['node'];
+
 const makeOrganization = (
-  overrides: Partial<OrganizationItemFragment> = {}
-): OrganizationItemFragment => ({
+  overrides: Partial<AdminOrganization> = {}
+): AdminOrganization => ({
   id: ORGANIZATION_ID,
   name: ORGANIZATION_NAME,
   domains: [ORGANIZATION_DOMAIN],
   personal_space: false,
+  administrator_emails: [],
+  members_count: 0,
   ...overrides,
 });
 
@@ -118,9 +132,9 @@ const CREATED_ORGANIZATION = makeOrganization({
 const EDITED_ORGANIZATION = makeOrganization({ name: NEW_ORGANIZATION_NAME });
 
 const makeListResponse = (
-  organizations: OrganizationItemFragment[],
+  organizations: AdminOrganization[],
   totalCount = organizations.length
-): OrganizationsListQuery => ({
+): OrganizationsAdminListQuery => ({
   organizations: {
     totalCount,
     edges: organizations.map((node) => ({ node })),
@@ -130,12 +144,12 @@ const makeListResponse = (
 // The list runs on a real QueryClient: only its fetch is mocked.
 const useListQueryWithMockedFetch = (
   _client: unknown,
-  variables: OrganizationsListQueryVariables,
-  options?: Omit<UseQueryOptions<OrganizationsListQuery>, 'queryKey'>
+  variables: OrganizationsAdminListQueryVariables,
+  options?: Omit<UseQueryOptions<OrganizationsAdminListQuery>, 'queryKey'>
 ) =>
   useQuery({
     ...options,
-    queryKey: ['OrganizationsList', variables],
+    queryKey: ['OrganizationsAdminList', variables],
     queryFn: () => mocks.listOrganizations(variables),
   });
 
@@ -157,12 +171,15 @@ const ME_ORGANIZATIONS_RESPONSE: MeOrganizationsQuery = {
   },
 };
 
-const mockListResponses = (...responses: Promise<OrganizationsListQuery>[]) =>
+const mockListResponses = (
+  ...responses: Promise<OrganizationsAdminListQuery>[]
+) =>
   responses.forEach((response) =>
     mocks.listOrganizations.mockReturnValueOnce(response)
   );
 
-const lastQueriedVariables = (): OrganizationsListQueryVariables | undefined =>
+const lastQueriedVariables = ():
+  OrganizationsAdminListQueryVariables | undefined =>
   mocks.listOrganizations.mock.lastCall?.[0];
 
 const getRowOf = (text: string): HTMLElement => {
@@ -178,13 +195,16 @@ const getSearchField = () =>
     name: 'OrganizationActions.SearchOrganizationWithEmail',
   });
 
+const getSeeMembersLink = () =>
+  screen.getByRole('link', { name: 'OrganizationForm.SeeMembers' });
+
 const getNextPageButton = () =>
   screen.getByRole('button', { name: 'DesignSystem.DataTable.NextPage' });
 
 type User = ReturnType<typeof testRender>['user'];
 
 const renderList = async (
-  options?: Parameters<typeof testRender>[1]
+  options: Parameters<typeof testRender>[1] = { me: BYPASS_USER }
 ): Promise<ReturnType<typeof testRender>> => {
   const rendered = testRender(<OrganizationList />, options);
   await screen.findByText(ORGANIZATION_NAME);
@@ -246,7 +266,8 @@ const renderListWithHeaderSwitcher = async (): Promise<
     <>
       <HeaderOrganizationSwitcher />
       <OrganizationList />
-    </>
+    </>,
+    { me: BYPASS_USER }
   );
   await screen.findByText(ORGANIZATION_NAME);
   await screen.findByText('OrganizationSwitcher.PersonalSpace');
@@ -276,7 +297,7 @@ describe('OrganizationList', () => {
     localStorage.clear();
     mocks.state.outcome = 'success';
     mocks.state.error = new Error(SERVER_ERROR);
-    mocks.useOrganizationsListQuery.mockImplementation(
+    mocks.useOrganizationsAdminListQuery.mockImplementation(
       useListQueryWithMockedFetch
     );
     mocks.listOrganizations.mockResolvedValue(
@@ -298,6 +319,68 @@ describe('OrganizationList', () => {
       expect(getRowOf(ORGANIZATION_NAME)).toHaveTextContent(
         ORGANIZATION_DOMAIN
       );
+    });
+
+    it.each([
+      { profile: 'BYPASS', me: BYPASS_USER },
+      {
+        profile: 'READ_ORGANIZATION_MEMBERS without BYPASS',
+        me: READ_ORGANIZATION_MEMBERS_USER,
+      },
+    ])(
+      "should link See members to the organization's members page when the user holds $profile",
+      async ({ me }) => {
+        // Given
+        vi.mocked(usePathname).mockReturnValue(ORGANIZATIONS_PATH);
+
+        // When
+        await renderList({ me });
+
+        // Then
+        expect(getSeeMembersLink()).toHaveAttribute(
+          'href',
+          `${ORGANIZATIONS_PATH}/${ORGANIZATION_ID}/members`
+        );
+      }
+    );
+
+    it('should display the members count of the organization in the Total column', async () => {
+      // Given
+      mocks.listOrganizations.mockResolvedValue(
+        makeListResponse([makeOrganization({ members_count: MEMBERS_COUNT })])
+      );
+
+      // When
+      await renderList();
+
+      // Then
+      expect(
+        within(getRowOf(ORGANIZATION_NAME)).getByRole('cell', {
+          name: String(MEMBERS_COUNT),
+        })
+      ).toBeInTheDocument();
+    });
+
+    it('should display the first administrator email in the organization row', async () => {
+      // Given
+      mocks.listOrganizations.mockResolvedValue(
+        makeListResponse([
+          makeOrganization({
+            administrator_emails: [
+              FIRST_ADMINISTRATOR_EMAIL,
+              SECOND_ADMINISTRATOR_EMAIL,
+            ],
+          }),
+        ])
+      );
+
+      // When
+      await renderList();
+
+      // Then
+      expect(
+        within(getRowOf(ORGANIZATION_NAME)).getByText(FIRST_ADMINISTRATOR_EMAIL)
+      ).toBeInTheDocument();
     });
 
     it('should show skeleton rows when the first page is loading', () => {
@@ -446,6 +529,28 @@ describe('OrganizationList', () => {
         JSON.stringify(OrderingMode.Desc)
       );
     });
+  });
+
+  describe('read-only access', () => {
+    it.each([
+      {
+        control: 'Create organization',
+        name: 'OrganizationForm.CreateOrganization',
+      },
+      { control: 'row actions', name: 'Utils.OpenMenu' },
+    ])(
+      'should hide the $control button when the user holds READ_ORGANIZATION_MEMBERS without BYPASS',
+      async ({ name }) => {
+        // Given
+        const me = READ_ORGANIZATION_MEMBERS_USER;
+
+        // When
+        await renderList({ me });
+
+        // Then
+        expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+      }
+    );
   });
 
   describe('mutations', () => {

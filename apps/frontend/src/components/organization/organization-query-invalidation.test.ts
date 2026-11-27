@@ -3,13 +3,17 @@ import {
   meOrganizationDomainsKeys,
   meOrganizationsKeys,
 } from '@graphql/me/me.keys';
-import { organizationKeys } from '@graphql/organization/organization.keys';
+import {
+  adminOrganizationsKeys,
+  organizationKeys,
+} from '@graphql/organization/organization.keys';
 import { QueryClient } from '@tanstack/react-query';
 
 describe('invalidateOrganizationQueries', () => {
   it.each`
     key                                | description
-    ${organizationKeys.all()}          | ${'the admin organization list'}
+    ${adminOrganizationsKeys.all()}    | ${'the admin organization list'}
+    ${organizationKeys.all()}          | ${"the organization pickers' list"}
     ${meOrganizationsKeys.all()}       | ${"the header switcher's organizations"}
     ${meOrganizationDomainsKeys.all()} | ${"the trial user options' organization domains"}
   `('should invalidate $description', async ({ key }) => {

@@ -830,6 +830,10 @@
     "SearchOrganizationWithEmail": "Rechercher une organisation par email..."
   },
   "OrganizationForm": {
+    "Administrators": "Administrateurs",
+    "AdministratorsPopoverTitle": "Administrateurs ({count})",
+    "CopyAdministratorEmail": "Copier {email}",
+    "CopyAll": "Tout copier",
     "CreateOrganization": "Créer une organisation",
     "DeleteOrganization": "Supprimer l'organisation",
     "Domains": "Domaines",
@@ -841,8 +845,13 @@
       "DuplicateName": "Une organisation portant ce nom existe déjà",
       "Name": "Le nom de l'organisation est requis"
     },
+    "Members": "Membres",
     "Name": "Nom",
-    "SureDeleteOrganization": "Êtes-vous sûr de vouloir supprimer l'organisation {organizationName} ? Cette action ne pourra pas être annulée."
+    "NoAdministrator": "Aucun administrateur",
+    "OtherAdministrators": "+{count} {count, plural, one {autre administrateur} other {autres administrateurs}}",
+    "SeeMembers": "Voir les membres",
+    "SureDeleteOrganization": "Êtes-vous sûr de vouloir supprimer l'organisation {organizationName} ? Cette action ne pourra pas être annulée.",
+    "Total": "Total"
   },
   "OrganizationInServiceAction": {
     "AddOrganization": "Abonnement de l'organisation au service",

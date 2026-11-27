@@ -4440,6 +4440,17 @@ export type OrganizationsListQueryVariables = Exact<{
 
 export type OrganizationsListQuery = { __typename?: 'Query', organizations: { __typename?: 'OrganizationConnection', totalCount: number, edges: Array<{ __typename?: 'OrganizationEdge', node: { __typename?: 'Organization', id: string, name: string, domains: Array<string> | null, personal_space: boolean } }> } };
 
+export type OrganizationsAdminListQueryVariables = Exact<{
+  count: InputMaybe<Scalars['Int']['input']>;
+  cursor: InputMaybe<Scalars['ID']['input']>;
+  orderBy: OrganizationOrdering;
+  orderMode: OrderingMode;
+  searchTerm: InputMaybe<Scalars['String']['input']>;
+}>;
+
+
+export type OrganizationsAdminListQuery = { __typename?: 'Query', organizations: { __typename?: 'OrganizationConnection', totalCount: number, edges: Array<{ __typename?: 'OrganizationEdge', node: { __typename?: 'Organization', administrator_emails: Array<string> | null, members_count: number | null, id: string, name: string, domains: Array<string> | null, personal_space: boolean } }> } };
+
 export type UserOrganizationsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -8969,6 +8980,72 @@ export const useInfiniteOrganizationsListQuery = <
 useInfiniteOrganizationsListQuery.getKey = (variables: OrganizationsListQueryVariables) => ['OrganizationsList.infinite', variables];
 useInfiniteOrganizationsListQuery.getRootKey = () => ['OrganizationsList.infinite'] as const;
 useOrganizationsListQuery.fetcher = (client: GraphQLClient, variables: OrganizationsListQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationsListQuery, OrganizationsListQueryVariables>(client, OrganizationsListDocument, variables, headers);
+
+export const OrganizationsAdminListDocument = `
+    query OrganizationsAdminList($count: Int, $cursor: ID, $orderBy: OrganizationOrdering!, $orderMode: OrderingMode!, $searchTerm: String) {
+  organizations(
+    first: $count
+    after: $cursor
+    orderBy: $orderBy
+    orderMode: $orderMode
+    searchTerm: $searchTerm
+  ) {
+    totalCount
+    edges {
+      node {
+        ...OrganizationItem
+        administrator_emails
+        members_count
+      }
+    }
+  }
+}
+    ${OrganizationItemFragmentDoc}`;
+
+export const useOrganizationsAdminListQuery = <
+      TData = OrganizationsAdminListQuery,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationsAdminListQueryVariables,
+      options?: Omit<UseQueryOptions<OrganizationsAdminListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseQueryOptions<OrganizationsAdminListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useQuery<OrganizationsAdminListQuery, TError, TData>(
+      {
+    queryKey: ['OrganizationsAdminList', variables],
+    queryFn: fetcher<OrganizationsAdminListQuery, OrganizationsAdminListQueryVariables>(client, OrganizationsAdminListDocument, variables, headers),
+    ...options
+  }
+    )};
+
+useOrganizationsAdminListQuery.getKey = (variables: OrganizationsAdminListQueryVariables) => ['OrganizationsAdminList', variables];
+useOrganizationsAdminListQuery.getRootKey = () => ['OrganizationsAdminList'] as const;
+export const useInfiniteOrganizationsAdminListQuery = <
+      TData = InfiniteData<OrganizationsAdminListQuery>,
+      TError = unknown
+    >(
+      client: GraphQLClient,
+      variables: OrganizationsAdminListQueryVariables,
+      options: Omit<UseInfiniteQueryOptions<OrganizationsAdminListQuery, TError, TData>, 'queryKey'> & { queryKey?: UseInfiniteQueryOptions<OrganizationsAdminListQuery, TError, TData>['queryKey'] },
+      headers?: RequestInit['headers']
+    ) => {
+    
+    return useInfiniteQuery<OrganizationsAdminListQuery, TError, TData>(
+      (() => {
+    const { queryKey: optionsQueryKey, ...restOptions } = options;
+    return {
+      queryKey: optionsQueryKey ?? ['OrganizationsAdminList.infinite', variables],
+      queryFn: (metaData) => fetcher<OrganizationsAdminListQuery, OrganizationsAdminListQueryVariables>(client, OrganizationsAdminListDocument, {...variables, ...(metaData.pageParam ?? {})}, headers)(),
+      ...restOptions
+    }
+  })()
+    )};
+
+useInfiniteOrganizationsAdminListQuery.getKey = (variables: OrganizationsAdminListQueryVariables) => ['OrganizationsAdminList.infinite', variables];
+useInfiniteOrganizationsAdminListQuery.getRootKey = () => ['OrganizationsAdminList.infinite'] as const;
+useOrganizationsAdminListQuery.fetcher = (client: GraphQLClient, variables: OrganizationsAdminListQueryVariables, headers?: RequestInit['headers']) => fetcher<OrganizationsAdminListQuery, OrganizationsAdminListQueryVariables>(client, OrganizationsAdminListDocument, variables, headers);
 
 export const UserOrganizationsDocument = `
     query UserOrganizations {
