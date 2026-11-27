@@ -231,13 +231,6 @@ const nextConfig = {
   },
   skipTrailingSlashRedirect: true,
   reactStrictMode: true,
-  compiler: {
-    relay: {
-      src: './',
-      language: 'typescript',
-      artifactDirectory: '__generated__',
-    },
-  },
   turbopack: {
     rules: {
       '*.svg': {

@@ -49,8 +49,8 @@ const PendingUserNotifications = ({
 
   const { data } = useNotificationPendingUsers(organizationId);
 
-  // The bell and the pending users tab counter share this query, as they
-  // shared the Relay record: both follow a deletion or an invalidation.
+  // The bell and the pending users tab counter share this query: both
+  // follow a deletion or an invalidation.
   // Batched, as a bulk accept sends one deletion per user.
   const refreshPendingUsers = useBatchedInvalidation({
     queryKey: pendingUsersKeys.list(

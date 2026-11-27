@@ -55,9 +55,13 @@ const interactWithLink = async (interaction: Interaction) => {
 
 beforeEach(() => {
   vi.useFakeTimers();
+  // user-event waits through Testing Library, which only advances fake timers
+  // when a global jest object exists: without it hover() and tab() never settle.
+  vi.stubGlobal('jest', vi);
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 

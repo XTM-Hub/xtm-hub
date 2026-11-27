@@ -243,7 +243,7 @@ export const UserServiceForm = ({
     {
       // A search keeps the previous data, so the field never goes back to empty.
       placeholderData: keepPreviousData,
-      // Like Relay, a failed load reaches the error page; a failed background
+      // A failed first load reaches the error page; a failed background
       // refetch keeps the options shown.
       throwOnError: (_error, query) => query.state.data === undefined,
     }
@@ -281,7 +281,7 @@ export const UserServiceForm = ({
     [keptUsersOptions]
   );
 
-  // The form waits for the users, as it did when the Relay query suspended it.
+  // The form waits for the users before it renders.
   if (!data) {
     return <Loader />;
   }

@@ -34,7 +34,7 @@ export const retryUnlessUnauthenticated = (
 
 /**
  * `throwOnError` of a query whose failed first load reaches the nearest error
- * boundary, as a Relay query did: a failed background refetch keeps the data
+ * boundary: a failed background refetch keeps the data
  * already on screen instead.
  */
 export const throwOnFirstLoadError = (

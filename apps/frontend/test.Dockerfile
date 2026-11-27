@@ -33,6 +33,4 @@ WORKDIR /app/apps/frontend
 RUN corepack enable && \
     echo "NEXT_PUBLIC_APP_VERSION=${APP_VERSION}" > .env.local
 
-RUN yarn relay
-
 CMD ["yarn", "test:ci"]

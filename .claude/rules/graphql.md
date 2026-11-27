@@ -2,7 +2,6 @@
 paths:
   - "apps/backend/**/*.graphql"
   - "apps/backend/**/*.resolver.ts"
-  - "apps/frontend/**/*.graphql.ts"
   - "apps/frontend/graphql/**"
   - "apps/frontend/schema.graphql"
 ---
@@ -18,10 +17,8 @@ flowchart LR
     B --> C["src/__generated__/resolvers-types.ts"]
     A --> D["API start, NODE_ENV not prod/staging/dev"]
     D --> E["apps/frontend/schema.graphql"]
-    E --> F["yarn relay<br/>(relay-compiler)"]
-    F --> G["apps/frontend/__generated__/"]
-    E --> H["yarn codegen<br/>(graphql-codegen)"]
-    H --> I["apps/frontend/graphql/generated.ts<br/>apps/frontend/graphql/mocks.ts"]
+    E --> F["yarn codegen<br/>(graphql-codegen)"]
+    F --> G["apps/frontend/graphql/generated.ts<br/>apps/frontend/graphql/mocks.ts"]
 ```
 
 ## Rules
@@ -32,13 +29,10 @@ flowchart LR
 - `apps/frontend/schema.graphql` is **generated**. It is refreshed when the API starts outside
   production/staging/development. Do not hand-edit it.
 - After the schema moves, restart the API so `apps/frontend/schema.graphql` is rewritten (`generate:ts` does not write
-  it), then run the two frontend generators. They read that file, so running them before the restart uses a stale schema:
-  - `yarn workspace @xtm-hub/frontend relay` compiles the `graphql` tagged templates of the Relay pages into
-    `apps/frontend/__generated__/` (gitignored). Run it after a schema change or a Relay template edit. Skipping it is the
-    most common source of bogus frontend type errors.
-  - `yarn workspace @xtm-hub/frontend codegen` regenerates `apps/frontend/graphql/generated.ts` and
-    `apps/frontend/graphql/mocks.ts` from the schema and the `apps/frontend/graphql/**/*.graphql` operations. Run it after
-    a schema change or after editing one of those operation files. Both outputs are **tracked**: commit them with the change.
+  it), then run the frontend generator. It reads that file, so running it before the restart uses a stale schema:
+  `yarn workspace @xtm-hub/frontend codegen` regenerates `apps/frontend/graphql/generated.ts` and
+  `apps/frontend/graphql/mocks.ts` from the schema and the `apps/frontend/graphql/**/*.graphql` operations. Run it after
+  a schema change or after editing one of those operation files. Both outputs are **tracked**: commit them with the change.
 - Resolvers are merged in `apps/backend/src/server/graphql-schema.ts`. A new module's resolver has to be registered
   there or its fields silently do not exist.
 - Adding, renaming, or reshaping an operation? Update the matching `.bru` request under `bruno/` too — see
@@ -54,15 +48,13 @@ others. An operation has one of the two, never both. The returned data is filter
 documents in validation are not for everyone), never by the frontend or a field the client chooses to ask for. See
 [`access-control.md`](access-control.md).
 
-## Relay conventions (existing pages only)
+## Schema conventions
 
 - The schema is Relay-compatible: it exposes the `Node` interface (`apps/backend/src/nodes/`) and Connection/PageInfo
   types (`apps/backend/src/modules/common/`).
 - Paginated fields must return a Connection, and the backend side should use `paginate()` from the Knex layer.
-- Frontend operations live in `*.graphql.ts` files using the `graphql` tagged template; artifacts land in
-  `apps/frontend/__generated__/` (aliased as `@generated/*`).
 
-## `@tanstack/react-query` conventions (new frontend work)
+## `@tanstack/react-query` conventions (frontend)
 
 - Frontend operations live in `apps/frontend/graphql/<domain>/<name>.query.graphql` (or `.mutation.graphql`).
 - `yarn workspace @xtm-hub/frontend codegen` (`graphql-codegen`, `typescript-react-query` plugin) refreshes

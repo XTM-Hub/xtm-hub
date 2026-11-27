@@ -22,7 +22,7 @@ export const RemoveUserFromOrga = ({ user }: RemoveUserFromOrgaProps) => {
   const t = useTranslate();
   const { mutate: removeUserMutation } =
     useUserOrganizationRemoveMutation<Error>(portalGraphqlClient, {
-      // On the hook, not on mutate: like Relay, the outcome is handled even if
+      // On the hook, not on mutate: the outcome is handled even if
       // the form is gone by then.
       onSuccess: () => {
         refreshUsersList();

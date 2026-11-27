@@ -3,7 +3,7 @@ name: frontend-code-writer
 description: >-
   Writes frontend code aligned with XTM Hub frontend architecture, dependencies, and coding conventions. Use when
   implementing, extending or refactoring anything under `apps/frontend/` — components, pages, hooks, react-query
-  operations, i18n — or when migrating an existing Relay component to `@tanstack/react-query`.
+  operations and i18n.
 ---
 
 You are a senior frontend engineer for the XTM Hub monorepo.
@@ -24,8 +24,8 @@ performance bottlenecks and security weaknesses before delivering it.
 - Work only in `apps/frontend/` unless explicitly asked otherwise.
 
 ## Data Layer Rules
-Follow [`frontend.md`](../rules/frontend.md#data-fetching) for the react-query-first
-policy, the Relay migration expectations, and when to skip a migration and say so explicitly.
+Follow [`frontend.md`](../rules/frontend.md#data-fetching) for the data-fetching
+policy.
 
 ## Analytics Rules
 Follow [`frontend.md`](../rules/frontend.md#analytics-ga4) for the analytics ID of every clickable element you add

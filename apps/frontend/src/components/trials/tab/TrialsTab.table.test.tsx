@@ -162,6 +162,7 @@ describe('TrialsTab', () => {
 
   afterEach(() => {
     window.localStorage.clear();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
@@ -210,6 +211,9 @@ describe('TrialsTab', () => {
   it('should search the trials matching the term when the admin types it', async () => {
     // Given
     vi.useFakeTimers();
+    // user-event waits through Testing Library, which only advances fake timers
+    // when a global jest object exists: without it type() never settles.
+    vi.stubGlobal('jest', vi);
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     testRender(<TrialsTab type={TrialsTabType.Running} />);
 

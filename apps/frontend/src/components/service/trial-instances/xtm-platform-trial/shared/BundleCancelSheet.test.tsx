@@ -3,6 +3,7 @@
 import testRender from '@/utils/test/test-render';
 import { xtmPlatformBundleKeys } from '@graphql/deployment/deployment.keys';
 import { registeredPlatformsKeys } from '@graphql/registered-platforms/registered-platforms.keys';
+import { registrationKeys } from '@graphql/registration/registration.keys';
 import { serviceInstancesKeys } from '@graphql/service-instances/service-instances.keys';
 import { platformTrialKeys } from '@graphql/trial/trial.keys';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
@@ -213,6 +214,9 @@ describe('BundleCancelSheet', () => {
     });
     expect(testState.invalidateQueries).toHaveBeenCalledWith({
       queryKey: xtmPlatformBundleKeys.all(),
+    });
+    expect(testState.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: registrationKeys.allByServiceInstance(),
     });
   });
 

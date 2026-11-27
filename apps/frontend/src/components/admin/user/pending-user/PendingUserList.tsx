@@ -106,12 +106,12 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
     {
       // A page, sort or search change keeps the current rows until its results arrive.
       placeholderData: keepPreviousData,
-      // Like Relay, a failed load reaches the error page; a failed background
+      // A failed first load reaches the error page; a failed background
       // refetch keeps the rows shown.
       throwOnError: (_error, query) => query.state.data === undefined,
-      // The default staleTime applies, unlike UserList: Relay loaded this list
-      // store-or-network, not store-and-network. Refetching on window focus
-      // follows the app default.
+      // The default staleTime applies, unlike UserList: a list already in the
+      // cache is shown without a reload. Refetching on window focus follows
+      // the app default.
     }
   );
 
@@ -127,7 +127,7 @@ const PendingUserList = ({ organization }: PendingUserListProps) => {
   });
   const { clearSelection } = useRowSelection(selection, setSelection);
 
-  // Only the list on screen, as the Relay refetch did: the bell and the tab
+  // Only the list on screen is refreshed: the bell and the tab
   // counter keep their own pending users query. Batched, as an action is
   // followed by its own deletion event and a bulk accept by one per user.
   const refreshPendingUsers = useBatchedInvalidation({

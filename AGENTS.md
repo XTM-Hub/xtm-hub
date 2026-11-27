@@ -6,7 +6,7 @@ community engagement hub. Full-stack TypeScript monorepo on Yarn workspaces.
 | Workspace | Path | Stack | Dev port |
 | --- | --- | --- | --- |
 | `@xtm-hub/backend` | `apps/backend` | Express 5, Apollo Server, GraphQL, Knex, PostgreSQL, Elasticsearch, Silo (S3) | 4002 |
-| `@xtm-hub/frontend` | `apps/frontend` | Next.js 16 (App Router + Turbopack), React 19, `@tanstack/react-query` (mandatory for new data fetching) + Relay (existing pages, being phased out), TailwindCSS 4, `@filigran/design-system` | 3002 |
+| `@xtm-hub/frontend` | `apps/frontend` | Next.js 16 (App Router + Turbopack), React 19, `@tanstack/react-query`, TailwindCSS 4, `@filigran/design-system` | 3002 |
 | `@xtm-hub/test_e2e` | `apps/e2e` | Playwright | — |
 
 ## Setup
@@ -45,13 +45,13 @@ already exist. The `typescript-eslint` version warning is non-blocking.
 
 - **No `console.log`** in new application code. Backend: `logApp` from `apps/backend/src/utils/app-logger.util.ts`.
   `console.warn` / `console.error` only in scripts and launch code outside the running app.
-- **Never edit generated output**: `apps/frontend/__generated__/`, `apps/frontend/schema.graphql`,
+- **Never edit generated output**: `apps/frontend/schema.graphql`,
   `apps/frontend/graphql/generated.ts`, `apps/frontend/graphql/mocks.ts`, `apps/backend/src/__generated__/`,
   `apps/backend/src/model/kanel/`.
 - **Never hardcode versions in documentation** — reference `.nvmrc`, `packageManager` or the `catalog` block.
 - **Frontend UI** follows [`design-system.md`](.claude/rules/design-system.md).
 - **Frontend analytics IDs** follow [`frontend.md`](.claude/rules/frontend.md#analytics-ga4).
-- **After any GraphQL change** (backend schema, Relay template or `apps/frontend/graphql/**` operation), regenerate
+- **After any GraphQL change** (backend schema or `apps/frontend/graphql/**` operation), regenerate
   and commit the derived files: what to run depends on what changed, see [`graphql.md`](.claude/rules/graphql.md).
 - **Before frontend `check-ts` on a fresh checkout**, run `yarn workspace @xtm-hub/frontend next typegen`, or you
   get bogus `@public/*.svg` errors from the gitignored `next-env.d.ts`.

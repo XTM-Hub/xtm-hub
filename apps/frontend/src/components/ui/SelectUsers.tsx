@@ -9,8 +9,8 @@ import { keepPreviousData } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import { useDebounceCallback } from 'usehooks-ts';
 
-// As with the Relay refetch it replaces, a search loads fewer users than the
-// first load, even once the search is cleared.
+// A search loads fewer users than the first load, even once the search is
+// cleared.
 const INITIAL_USERS_COUNT = 50;
 const SEARCHED_USERS_COUNT = 10;
 
@@ -62,7 +62,7 @@ const SelectUsersFormField = ({
     {
       // A search keeps the previous data, so the field never goes back to empty.
       placeholderData: keepPreviousData,
-      // Like Relay, a failed load reaches the error page; a failed background
+      // A failed first load reaches the error page; a failed background
       // refetch keeps the options shown.
       throwOnError: (_error, query) => query.state.data === undefined,
     }

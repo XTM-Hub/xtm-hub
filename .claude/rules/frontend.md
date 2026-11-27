@@ -8,10 +8,7 @@ paths:
 Next.js 16 (App Router + Turbopack) + React 19 + TailwindCSS 4 + `@filigran/design-system`. Dev port **3002** (Docker production
 serves on 3000 internally).
 
-Two data layers coexist mid-migration: **`@tanstack/react-query` is mandatory for all new data-fetching work**
-(see [Data fetching](#data-fetching)); **Relay** only remains on existing pages, and the long-term goal is to
-remove it entirely — migrate a Relay component to react-query whenever you're already touching it and it's
-safe to do so.
+Data fetching goes through **`@tanstack/react-query`** (see [Data fetching](#data-fetching)).
 
 ## Commands
 
@@ -19,7 +16,6 @@ Run from `apps/frontend` (or `yarn workspace @xtm-hub/frontend <script>`).
 
 | Command | What it does |
 | --- | --- |
-| `yarn relay` | `relay-compiler` — **required after a schema change or a Relay `graphql` template edit** |
 | `yarn codegen` | `graphql-codegen --config codegen.ts` — **required after a schema change or a `graphql/**/*.graphql` operation edit**; rewrites the tracked `graphql/generated.ts` and `graphql/mocks.ts` |
 | `yarn next typegen` | Generates `next-env.d.ts` and route types — **required before `check-ts`** |
 | `yarn check-ts` | `tsc --noEmit` |
@@ -27,15 +23,14 @@ Run from `apps/frontend` (or `yarn workspace @xtm-hub/frontend <script>`).
 | `yarn format` / `yarn format:check` | Prettier |
 | `yarn test` | Vitest + jsdom |
 | `yarn test:ci` | `lint` + tests with coverage — the full gate |
-| `yarn build` | `relay-compiler && next build` |
+| `yarn build` | `next build` |
 | `yarn i18n:check` | Locale parity against `messages/en.json` |
 | `yarn generate:component` | Scaffolds a component |
 
-`yarn dev` runs `relay-compiler` once at start, `codegen:watch` and `next dev` concurrently: the codegen output stays
-fresh while you work, the Relay artifacts do not. Run `yarn relay` yourself after touching any `graphql` tagged
-template, and `yarn codegen` outside `dev` — stale artifacts surface as confusing type errors in `__generated__/` or
-`graphql/generated.ts`. Both read `schema.graphql`, which the backend rewrites on API start, so restart the API first
-after a schema change (see [`graphql.md`](graphql.md)).
+`yarn dev` runs `codegen:watch` and `next dev` concurrently, so the codegen output stays fresh while you work. Run
+`yarn codegen` yourself outside `dev` — stale output surfaces as confusing type errors in `graphql/generated.ts`. It
+reads `schema.graphql`, which the backend rewrites on API start, so restart the API first after a schema change (see
+[`graphql.md`](graphql.md)).
 
 **`next-env.d.ts` is gitignored and generated.** It is what declares `@public/*.svg` and the route types, so on a
 fresh checkout `yarn check-ts` reports around twenty bogus `Cannot find module '@public/….svg'` errors. Run
@@ -51,21 +46,18 @@ app/                                Next.js App Router
   (embed)/                          Embeddable widgets
 src/components/                     Components by domain; `ui/` holds shared primitives
 src/hooks/                          useGranted, useDecodedParams, ...
-src/relay/                          Client + server environments, SSR provider (existing pages)
 src/lib/graphql-client.ts           portalGraphqlClient — graphql-request client for react-query
 src/i18n/                           next-intl config, locale, request scope
 src/lib/  src/utils/                Helpers, server actions, middleware helpers, query-cache
-graphql/                            *.query.graphql / *.mutation.graphql + generated.ts, mocks.ts (react-query, new work)
-__generated__/                      Relay output — generated, never edit
+graphql/                            *.query.graphql / *.mutation.graphql + generated.ts, mocks.ts (react-query)
 messages/                           One JSON file per locale (`en` is the source — see `yarn i18n:check`)
 proxy.ts                            Next.js 16 proxy convention (was middleware.ts); i18n + auth/document/GraphQL proxying
-schema.graphql                      Written by the backend on API start, read by Relay and graphql-codegen
+schema.graphql                      Written by the backend on API start, read by graphql-codegen
 ```
 
 ## Path aliases
 
 - `@/*` → `./src/*`
-- `@generated/*` → `./__generated__/*` (Relay artifacts)
 - `@graphql/*` → `./graphql/*` (react-query operations and codegen output)
 
 Use them instead of deep relative paths.
@@ -116,24 +108,9 @@ The backend is reached through `proxy.ts` (Next.js 16's convention file, renamed
 delegates GraphQL/auth/document routes to `src/utils/middleware/graphql-request.util.ts` and rewrites them to
 `SERVER_HTTP_API` (default `http://localhost:4002`).
 
-**For new work, use `@tanstack/react-query`**, not Relay. See
-[`graphql.md`](graphql.md#tanstackreact-query-conventions-new-frontend-work) for the
+Use `@tanstack/react-query`. See
+[`graphql.md`](graphql.md#tanstackreact-query-conventions-frontend) for the
 operation-file convention, the codegen command, and the client/cache-invalidation wiring.
-
-**Never introduce new Relay usage, even for a small addition to an existing Relay page** — add it as a
-react-query call instead. The long-term goal is to remove Relay from this codebase entirely, so every
-new query or mutation should be react-query by default.
-
-When a task touches a component that still uses Relay for an unrelated reason, migrate that component's
-data fetching to react-query as part of the change, unless the migration is clearly out of scope for the
-task or too risky to fit safely (complex pagination/streaming, a large blast radius) — if you skip the
-migration for that reason, say so explicitly rather than silently leaving Relay in place. After removing
-a component's last Relay usage, confirm nothing else still imports its generated artifacts before
-deleting them.
-
-Existing Relay pages: see
-[`graphql.md`](graphql.md#relay-conventions-existing-pages-only) for the file convention
-and regeneration command.
 
 Server-side fetches:
 
@@ -145,15 +122,13 @@ Server-side fetches:
   anonymous visitor to the signup page instead of throwing.
 - When a server component fetches a query that a client component also reads through a react-query hook, prefetch
   and hydrate it, never pass it as props: see [`graphql.md`](graphql.md#server-rendering).
-- Existing Relay pages still go through `src/relay/server-portal-api-fetch.ts`, which forwards cookies and redirects on
-  its own.
 
 ## Logging
 
 `console.log` is not acceptable in new application code (ESLint enforces `no-console` repo-wide). ESLint lets
 `warn`/`error` through, but that is no permission: as `AGENTS.md` says, they stay in scripts and launch code outside
-the running app. The one existing exception is intentional dev-only GraphQL operation tracing — `src/lib/graphql-client.ts`,
-`src/lib/server-graphql-fetch.ts`, and `src/relay/environment/fetch-fn.ts` each log the operation name and variables
+the running app. The one existing exception is intentional dev-only GraphQL operation tracing — `src/lib/graphql-client.ts`
+and `src/lib/server-graphql-fetch.ts` each log the operation name and variables
 behind an `isDevelopment()` guard with an explicit `// eslint-disable-next-line no-console`. Do not remove these
 without being asked, and do not add a new one outside that same guarded, narrowly-scoped pattern.
 
@@ -206,7 +181,7 @@ The code lives in `src/lib/analytics/`; GA only loads on `hub.filigran.io`, afte
 ## Tests
 
 See [`testing.md`](testing.md) for structure, mocking policy and the frontend-specific
-tooling (`testRender`, `next-intl` mocking, `@tanstack/react-query` vs Relay mocking, pure-utility extraction).
+tooling (`testRender`, `next-intl` mocking, `@tanstack/react-query` mocking, pure-utility extraction).
 
 ## Environment variables
 

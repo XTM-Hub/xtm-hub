@@ -6,8 +6,6 @@ import unicorn from 'eslint-plugin-unicorn';
 const restrictedGlobalTestMocks = new Set([
   'next-intl',
   'next/navigation',
-  '@/relay/environment/registry',
-  '@/components/error-frontend-log.graphql',
   '@/hooks/use-registered-platforms',
   '@/hooks/use-is-feature-enabled',
 ]);
@@ -477,7 +475,7 @@ const eslintConfig = [
   // Default → kebab-case (utils, hooks, etc.)
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['**/components/**', '**/__generated__/**'],
+    ignores: ['**/components/**'],
     rules: {
       'unicorn/filename-case': ['error', { case: 'kebabCase' }],
     },
@@ -519,11 +517,7 @@ const eslintConfig = [
   },
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: [
-      '**/*.test.{ts,tsx}',
-      '**/*.spec.{ts,tsx}',
-      '**/__generated__/**',
-    ],
+    ignores: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     plugins: {
       'xtm-hub-theme-rules': localThemeRulesPlugin,
     },
@@ -533,7 +527,6 @@ const eslintConfig = [
   },
   {
     files: ['**/*.{ts,tsx}'],
-    ignores: ['**/__generated__/**'],
     plugins: {
       'xtm-hub-theme-rules': localThemeRulesPlugin,
     },
