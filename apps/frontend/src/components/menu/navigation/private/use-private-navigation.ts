@@ -126,6 +126,7 @@ export const usePrivateNavigation = (): NavigationConfig => {
       analyticsId: 'nav_admin_organizations_open',
       label: tMenuLinks('Organization'),
       group: accessGroupLabel,
+      restriction: [PortalCapability.ReadOrganizationMembers],
     },
     {
       href: `/${APP_PATH}/admin/parameters`,

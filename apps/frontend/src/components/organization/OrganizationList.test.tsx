@@ -9,6 +9,7 @@ import {
   OrganizationOrdering,
   type OrganizationsAdminListQuery,
   type OrganizationsAdminListQueryVariables,
+  PortalCapability,
 } from '@graphql/generated';
 import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -27,6 +28,10 @@ const STORED_PAGE_SIZE = 10;
 const SEVERAL_PAGES_COUNT = DEFAULT_PAGE_SIZE * 2;
 // DataTable renders this many skeleton rows under its header row while loading.
 const LOADING_ROW_COUNT = 30;
+const BYPASS_USER = { capabilities: [{ name: PortalCapability.Bypass }] };
+const READ_ORGANIZATION_MEMBERS_USER = {
+  capabilities: [{ name: PortalCapability.ReadOrganizationMembers }],
+};
 
 type MutationOutcome = 'success' | 'error' | 'pending';
 
@@ -191,7 +196,7 @@ const getNextPageButton = () =>
 type User = ReturnType<typeof testRender>['user'];
 
 const renderList = async (
-  options?: Parameters<typeof testRender>[1]
+  options: Parameters<typeof testRender>[1] = { me: BYPASS_USER }
 ): Promise<ReturnType<typeof testRender>> => {
   const rendered = testRender(<OrganizationList />, options);
   await screen.findByText(ORGANIZATION_NAME);
@@ -253,7 +258,8 @@ const renderListWithHeaderSwitcher = async (): Promise<
     <>
       <HeaderOrganizationSwitcher />
       <OrganizationList />
-    </>
+    </>,
+    { me: BYPASS_USER }
   );
   await screen.findByText(ORGANIZATION_NAME);
   await screen.findByText('OrganizationSwitcher.PersonalSpace');
@@ -453,6 +459,28 @@ describe('OrganizationList', () => {
         JSON.stringify(OrderingMode.Desc)
       );
     });
+  });
+
+  describe('read-only access', () => {
+    it.each([
+      {
+        control: 'Create organization',
+        name: 'OrganizationForm.CreateOrganization',
+      },
+      { control: 'row actions', name: 'Utils.OpenMenu' },
+    ])(
+      'should hide the $control button when the user holds READ_ORGANIZATION_MEMBERS without BYPASS',
+      async ({ name }) => {
+        // Given
+        const me = READ_ORGANIZATION_MEMBERS_USER;
+
+        // When
+        await renderList({ me });
+
+        // Then
+        expect(screen.queryByRole('button', { name })).not.toBeInTheDocument();
+      }
+    );
   });
 
   describe('mutations', () => {

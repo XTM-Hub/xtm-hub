@@ -14,6 +14,7 @@ import {
   mapToSortingTableValue,
 } from '@/components/ui/handle-sorting.utils';
 import { useDebouncedSearch } from '@/hooks/use-debounced-search';
+import { useAdminByPass } from '@/hooks/use-portal-capability';
 import { useTablePagination } from '@/hooks/use-table-pagination';
 import { useTranslate } from '@/hooks/use-translate';
 import { analyticsId } from '@/lib/analytics/analytics.ids';
@@ -30,7 +31,7 @@ import {
 } from '@graphql/generated';
 import { adminOrganizationsKeys } from '@graphql/organization/organization.keys';
 import { keepPreviousData } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef, Row } from '@tanstack/react-table';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -44,6 +45,7 @@ const OrganizationList = () => {
   const [deleteOrganization, setDeleteOrganization] = useState<
     OrganizationItemFragment | undefined
   >(undefined);
+  const canManageOrganizations = useAdminByPass();
   const columns = useMemo<ColumnDef<OrganizationItemFragment>[]>(
     () => [
       {
@@ -72,43 +74,49 @@ const OrganizationList = () => {
           );
         },
       },
-      {
-        id: 'actions',
-        size: 100,
-        enableHiding: false,
-        enableSorting: false,
-        enableResizing: false,
-        cell: ({ row }) => (
-          <div className="flex items-center justify-end">
-            <IconActions
-              analyticsId="list_row_actions_open"
-              aria-label={t('Utils.OpenMenu')}
-              icon={<MoreVertIcon className="h-4 w-4 text-icon-highlight" />}>
-              <IconActionsItem
-                {...analyticsId('admin_organization_services_open')}
-                onClick={() => {
-                  router.push(
-                    `${pathname}/${encodeURIComponent(row.original.id)}/subscribed-services`
-                  );
-                }}>
-                {t('Service.SubscribedServices')}
-              </IconActionsItem>
-              <IconActionsItem
-                {...analyticsId('admin_organization_edit')}
-                onClick={() => setEditOrganization(row.original)}>
-                {t('Utils.Update')}
-              </IconActionsItem>
-              <IconActionsItem
-                {...analyticsId('admin_organization_delete')}
-                onClick={() => setDeleteOrganization(row.original)}>
-                {t('Utils.Delete')}
-              </IconActionsItem>
-            </IconActions>
-          </div>
-        ),
-      },
+      ...(canManageOrganizations
+        ? [
+            {
+              id: 'actions',
+              size: 100,
+              enableHiding: false,
+              enableSorting: false,
+              enableResizing: false,
+              cell: ({ row }: { row: Row<OrganizationItemFragment> }) => (
+                <div className="flex items-center justify-end">
+                  <IconActions
+                    analyticsId="list_row_actions_open"
+                    aria-label={t('Utils.OpenMenu')}
+                    icon={
+                      <MoreVertIcon className="h-4 w-4 text-icon-highlight" />
+                    }>
+                    <IconActionsItem
+                      {...analyticsId('admin_organization_services_open')}
+                      onClick={() => {
+                        router.push(
+                          `${pathname}/${encodeURIComponent(row.original.id)}/subscribed-services`
+                        );
+                      }}>
+                      {t('Service.SubscribedServices')}
+                    </IconActionsItem>
+                    <IconActionsItem
+                      {...analyticsId('admin_organization_edit')}
+                      onClick={() => setEditOrganization(row.original)}>
+                      {t('Utils.Update')}
+                    </IconActionsItem>
+                    <IconActionsItem
+                      {...analyticsId('admin_organization_delete')}
+                      onClick={() => setDeleteOrganization(row.original)}>
+                      {t('Utils.Delete')}
+                    </IconActionsItem>
+                  </IconActions>
+                </div>
+              ),
+            },
+          ]
+        : []),
     ],
-    [pathname, router, t]
+    [canManageOrganizations, pathname, router, t]
   );
   const {
     pageSize,
@@ -233,7 +241,7 @@ const OrganizationList = () => {
             actions={
               <>
                 <DataTableHeadBarOptions />
-                <CreateOrganization />
+                {canManageOrganizations && <CreateOrganization />}
               </>
             }
           />
@@ -255,7 +263,7 @@ const OrganizationList = () => {
           columnOrder,
           columnVisibility,
           columnPinning: {
-            right: ['actions'],
+            right: canManageOrganizations ? ['actions'] : [],
           },
         }}
       />

@@ -333,6 +333,7 @@ describe('usePrivateNavigation', () => {
     ${[PortalCapability.Bypass]}                                                                           | ${['Organization', 'Parameters', 'Roles', 'Security', 'VotingRound', 'NewsFeed', 'Competitors', 'CSMBoard', 'RegisteredPlatforms', 'ServiceCatalog', 'Trials']}
     ${[PortalCapability.ReadTrials]}                                                                       | ${['Trials']}
     ${[PortalCapability.ReadSaasMetrics]}                                                                  | ${['CSMBoard']}
+    ${[PortalCapability.ReadOrganizationMembers]}                                                          | ${['Organization']}
     ${[PortalCapability.ModifyCompetitors]}                                                                | ${['Competitors']}
     ${[PortalCapability.ReadTrials, PortalCapability.ModifyCompetitors]}                                   | ${['Competitors', 'Trials']}
     ${[PortalCapability.ReadTrials, PortalCapability.ReadSaasMetrics, PortalCapability.ModifyCompetitors]} | ${['Competitors', 'CSMBoard', 'Trials']}
