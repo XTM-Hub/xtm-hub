@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, describe, vi } from 'vitest';
 import { TestHelper } from '../../../../../tests/helper/test.helper';
+import { Locale } from '../../../../__generated__/resolvers-types';
+import { ServiceInstanceId } from '../../../../model/kanel/public/ServiceInstance';
 import {
   ForbiddenErrorCode,
   UnauthenticatedErrorCode,
@@ -48,10 +50,11 @@ describe('editSeoServiceInstance mutation', () => {
       vi
         .spyOn(SeoServiceInstanceApp, 'editSeoServiceInstanceBy')
         .mockResolvedValue({
+          language: Locale.En,
           meta_title: 'title',
-        } as unknown as Awaited<
-          ReturnType<typeof SeoServiceInstanceApp.editSeoServiceInstanceBy>
-        >),
+          meta_description: 'description',
+          service_instance_id: uuidv4() as ServiceInstanceId,
+        }),
     expected: {
       anonymous: UnauthenticatedErrorCode.Unauthenticated,
       user: ForbiddenErrorCode.ForbiddenAccess,

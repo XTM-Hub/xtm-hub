@@ -52,10 +52,6 @@ import ProductVersion, {
   ProductVersionMutator,
 } from '../../src/model/kanel/public/ProductVersion';
 import { ServiceInstanceId } from '../../src/model/kanel/public/ServiceInstance';
-import Subscription, {
-  SubscriptionId,
-  SubscriptionMutator,
-} from '../../src/model/kanel/public/Subscription';
 import UseCase, {
   UseCaseInitializer,
   UseCaseMutator,
@@ -123,28 +119,6 @@ export const TestHelper = {
   ...TestApiTokenHelper,
   ...TestGuardFixturesHelper,
   ...TestSaasManagerInstanceHelper,
-  subscription: {
-    create: async (data?: Partial<Subscription>): Promise<Subscription> => {
-      const [subscription] = await db<Subscription>('Subscription')
-        .insert({
-          id: uuidv4() as SubscriptionId,
-          ...data,
-        })
-        .returning('*');
-      return subscription!;
-    },
-    delete: async (field: SubscriptionMutator) => {
-      await db<Subscription>('Subscription').where(field).del();
-    },
-    load: async (
-      field: SubscriptionMutator
-    ): Promise<Subscription | undefined> => {
-      return db<Subscription>('Subscription').where(field).select('*').first();
-    },
-    loadAll: async (field: SubscriptionMutator): Promise<Subscription[]> => {
-      return db<Subscription[]>('Subscription').where(field).select('*');
-    },
-  },
   organization: {
     create: async (
       data?: Partial<OrganizationInitializer>

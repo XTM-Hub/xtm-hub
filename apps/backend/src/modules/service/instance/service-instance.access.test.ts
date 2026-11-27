@@ -1,11 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
 import { afterEach, describe, vi } from 'vitest';
 import { TestHelper } from '../../../../tests/helper/test.helper';
-import { TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
+import { SERVICES, TEST_ORGANIZATIONS } from '../../../../tests/tests.const';
 import {
   OrderingMode,
+  PlatformContract,
+  RegisteredPlatform,
+  SeoServiceInstance,
+  ServiceConnection,
+  ServiceDefinitionIdentifier,
+  ServiceInstance,
   ServiceInstanceOrdering,
 } from '../../../__generated__/resolvers-types';
+import { ServiceInstanceId } from '../../../model/kanel/public/ServiceInstance';
 import {
   ForbiddenErrorCode,
   NotFoundErrorCode,
@@ -19,6 +26,66 @@ const SECOND_ORGANIZATION = TEST_ORGANIZATIONS.SECOND_ORGANIZATION.ID;
 
 afterEach(() => {
   vi.restoreAllMocks();
+});
+
+const EMPTY_SERVICE_CONNECTION: ServiceConnection = {
+  totalCount: 0,
+  edges: [],
+  pageInfo: {
+    hasNextPage: false,
+    hasPreviousPage: false,
+    startCursor: null,
+    endCursor: null,
+  },
+};
+
+const buildServiceInstance = (
+  overrides: Partial<ServiceInstance> = {}
+): ServiceInstance => ({
+  id: uuidv4(),
+  name: 'service instance',
+  capabilities: [],
+  ordering: 0,
+  ...overrides,
+});
+
+const buildSeoServiceInstance = (
+  overrides: Partial<SeoServiceInstance> = {}
+): SeoServiceInstance => ({
+  id: uuidv4(),
+  name: 'service instance',
+  slug: 'a-service',
+  service_definition: {
+    id: SERVICES.DEFINITIONS.OPENCTI_REGISTRATION.ID,
+    name: 'OpenCTI registration',
+    identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+  },
+  ...overrides,
+});
+
+const buildRegisteredPlatform = (
+  overrides: Partial<RegisteredPlatform> = {}
+): RegisteredPlatform => ({
+  id: uuidv4(),
+  contract: PlatformContract.Ce,
+  identifier: ServiceDefinitionIdentifier.OpenctiRegistration,
+  platform_id: uuidv4(),
+  service_instance_id: uuidv4() as ServiceInstanceId,
+  title: 'platform',
+  url: 'https://platform.example.com',
+  ...overrides,
+});
+
+const prepareWithoutFixtures = (
+  variables: Record<string, unknown>,
+  expectedData: Record<string, unknown>
+) => ({
+  prepare: () =>
+    Promise.resolve({
+      variables,
+      expectedData,
+      cleanup: () => Promise.resolve(),
+    }),
 });
 
 const OPEN_TO_ANYONE = {
@@ -39,18 +106,7 @@ describe('serviceInstances query', () => {
     guarded: () =>
       vi
         .spyOn(ServiceInstanceDomain, 'loadServiceInstances')
-        .mockResolvedValue({
-          totalCount: 0,
-          edges: [],
-          pageInfo: {
-            hasNextPage: false,
-            hasPreviousPage: false,
-            startCursor: null,
-            endCursor: null,
-          },
-        } as unknown as Awaited<
-          ReturnType<typeof ServiceInstanceDomain.loadServiceInstances>
-        >),
+        .mockResolvedValue(EMPTY_SERVICE_CONNECTION),
     expected: {
       anonymous: UnauthenticatedErrorCode.Unauthenticated,
       user: 'allowed',
@@ -59,12 +115,7 @@ describe('serviceInstances query', () => {
       otherOrganization: 'allowed',
       nonMember: 'allowed',
     },
-    prepare: () =>
-      Promise.resolve({
-        variables: {},
-        expectedData: { serviceInstances: { totalCount: 0 } },
-        cleanup: () => Promise.resolve(),
-      }),
+    ...prepareWithoutFixtures({}, { serviceInstances: { totalCount: 0 } }),
   });
 });
 
@@ -73,11 +124,9 @@ const SERVICE_INSTANCE_BY_ID_OPERATION = `query ($serviceInstanceId: ServiceInst
 }`;
 
 const spyOnLoadServiceInstance = () =>
-  vi.spyOn(ServiceInstanceApp, 'loadServiceInstance').mockResolvedValue({
-    name: 'service instance',
-  } as unknown as Awaited<
-    ReturnType<typeof ServiceInstanceApp.loadServiceInstance>
-  >);
+  vi
+    .spyOn(ServiceInstanceApp, 'loadServiceInstance')
+    .mockResolvedValue(buildServiceInstance());
 
 const prepareServiceInstanceById =
   (options: Parameters<typeof TestHelper.serviceInstanceScene.create>[0]) =>
@@ -174,12 +223,10 @@ describe('serviceInstanceById query on an unknown service instance', () => {
       otherOrganization: NotFoundErrorCode.NotFound,
       nonMember: NotFoundErrorCode.NotFound,
     },
-    prepare: () =>
-      Promise.resolve({
-        variables: { serviceInstanceId: uuidv4() },
-        expectedData: { serviceInstanceById: { name: 'service instance' } },
-        cleanup: () => Promise.resolve(),
-      }),
+    ...prepareWithoutFixtures(
+      { serviceInstanceId: uuidv4() },
+      { serviceInstanceById: { name: 'service instance' } }
+    ),
   });
 });
 
@@ -191,12 +238,7 @@ describe('serviceInstanceLinksByTags query', () => {
         .spyOn(ServiceInstanceApp, 'loadLinkServiceInstancesByTags')
         .mockResolvedValue([]),
     expected: OPEN_TO_ANYONE,
-    prepare: () =>
-      Promise.resolve({
-        variables: {},
-        expectedData: { serviceInstanceLinksByTags: [] },
-        cleanup: () => Promise.resolve(),
-      }),
+    ...prepareWithoutFixtures({}, { serviceInstanceLinksByTags: [] }),
   });
 });
 
@@ -209,12 +251,7 @@ describe('seoServiceInstances query', () => {
         .spyOn(ServiceInstanceApp, 'loadSeoServiceInstances')
         .mockResolvedValue([]),
     expected: OPEN_TO_ANYONE,
-    prepare: () =>
-      Promise.resolve({
-        variables: {},
-        expectedData: { seoServiceInstances: [] },
-        cleanup: () => Promise.resolve(),
-      }),
+    ...prepareWithoutFixtures({}, { seoServiceInstances: [] }),
   });
 });
 
@@ -222,18 +259,14 @@ describe('seoServiceInstance query', () => {
   TestHelper.expectAccessMatrix({
     operation: `query ($slug: String!) { seoServiceInstance(slug: $slug) { slug } }`,
     guarded: () =>
-      vi.spyOn(ServiceInstanceApp, 'loadSeoServiceInstance').mockResolvedValue({
-        slug: 'a-service',
-      } as unknown as Awaited<
-        ReturnType<typeof ServiceInstanceApp.loadSeoServiceInstance>
-      >),
+      vi
+        .spyOn(ServiceInstanceApp, 'loadSeoServiceInstance')
+        .mockResolvedValue(buildSeoServiceInstance()),
     expected: OPEN_TO_ANYONE,
-    prepare: () =>
-      Promise.resolve({
-        variables: { slug: 'a-service' },
-        expectedData: { seoServiceInstance: { slug: 'a-service' } },
-        cleanup: () => Promise.resolve(),
-      }),
+    ...prepareWithoutFixtures(
+      { slug: 'a-service' },
+      { seoServiceInstance: { slug: 'a-service' } }
+    ),
   });
 });
 
@@ -244,11 +277,9 @@ describe('addServicePicture mutation', () => {
       addServicePicture(serviceInstanceId: $serviceInstanceId, isLogo: true) { name }
     }`,
     guarded: () =>
-      vi.spyOn(ServiceInstanceApp, 'addServicePicture').mockResolvedValue({
-        name: 'service instance',
-      } as unknown as Awaited<
-        ReturnType<typeof ServiceInstanceApp.addServicePicture>
-      >),
+      vi
+        .spyOn(ServiceInstanceApp, 'addServicePicture')
+        .mockResolvedValue(buildServiceInstance()),
     expected: {
       anonymous: UnauthenticatedErrorCode.Unauthenticated,
       user: ForbiddenErrorCode.ForbiddenAccess,
@@ -257,12 +288,10 @@ describe('addServicePicture mutation', () => {
       otherOrganization: ForbiddenErrorCode.ForbiddenAccess,
       nonMember: ForbiddenErrorCode.ForbiddenAccess,
     },
-    prepare: () =>
-      Promise.resolve({
-        variables: { serviceInstanceId: uuidv4() },
-        expectedData: { addServicePicture: { name: 'service instance' } },
-        cleanup: () => Promise.resolve(),
-      }),
+    ...prepareWithoutFixtures(
+      { serviceInstanceId: uuidv4() },
+      { addServicePicture: { name: 'service instance' } }
+    ),
   });
 });
 
@@ -274,9 +303,7 @@ describe('updatePlatformServiceMetadata mutation', () => {
     guarded: () =>
       vi
         .spyOn(ServiceInstanceApp, 'updatePlatformServiceMetadata')
-        .mockResolvedValue({ title: 'platform' } as unknown as Awaited<
-          ReturnType<typeof ServiceInstanceApp.updatePlatformServiceMetadata>
-        >),
+        .mockResolvedValue(buildRegisteredPlatform()),
     expected: {
       anonymous: UnauthenticatedErrorCode.Unauthenticated,
       user: ForbiddenErrorCode.MissingCapabilityOnOrganization,
@@ -286,11 +313,9 @@ describe('updatePlatformServiceMetadata mutation', () => {
       otherOrganization: ForbiddenErrorCode.MissingCapabilityOnOrganization,
       nonMember: NotFoundErrorCode.NotFound,
     },
-    prepare: () =>
-      Promise.resolve({
-        variables: { input: { serviceInstanceId: uuidv4() } },
-        expectedData: { updatePlatformServiceMetadata: { title: 'platform' } },
-        cleanup: () => Promise.resolve(),
-      }),
+    ...prepareWithoutFixtures(
+      { input: { serviceInstanceId: uuidv4() } },
+      { updatePlatformServiceMetadata: { title: 'platform' } }
+    ),
   });
 });
