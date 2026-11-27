@@ -42,7 +42,8 @@ const asDenial = (
     ? result
     : { allowed: false, code: ForbiddenErrorCode.ForbiddenAccess };
 
-// Guards run in written order and the first that allows wins, so write the one that needs no query first
+// Guards run in written order and the first that allows wins, so write the one that needs no query first, then the
+// one most likely to allow
 export const anyOf = <Args = unknown>(
   first: Guard<Args>,
   second: Guard<Args>,

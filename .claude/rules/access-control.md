@@ -80,7 +80,7 @@ export default resolvers;
 | `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always, unless `bypass: false` | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member, or no organization from the source), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
 | `@Guarded(serviceGuard({ serviceInstance: fromArg('service_instance_id'), capabilities: [ServiceRestriction.X, …] }))` | A user with an access row on the selected organization's subscription to the service instance, holding one of the service capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (no such service instance, or no access row on it), `MISSING_CAPABILITY_ON_SERVICE` (capability missing) |
 | `@Guarded(subscribedGuard({ serviceInstance: fromArg('service_instance_id') }))` | A member of the selected organization when it subscribes to the service instance, whatever the capabilities: use it to open a service to its subscribers, `serviceGuard` when a capability is needed. `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member, no subscription, no such service instance or no id) |
-| `@Guarded(publicServiceInstance({ serviceInstance: fromArg('service_instance_id') }))` | Anyone, anonymous included, on a public service instance: use it for a service page open to visitors. Hands no `checked` | `NOT_FOUND` (hidden or unknown service instance, or no id) |
+| `@Guarded(publicServiceInstance({ serviceInstance: fromArg('service_instance_id') }))` | Anyone, anonymous included, on a public service instance: use it for an operation visitors may call, and put `loggedInGuard()` before it in an `allOf` to keep them out. Hands no `checked` | `NOT_FOUND` (hidden or unknown service instance, or no id) |
 | `@Guarded(allOf(sessionCallerGuard(), …))` | A caller who is not authenticated by an API token. Only inside `allOf`: see [Personal API tokens](#personal-api-tokens) | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_ALLOWED_WITH_API_TOKEN` (API token caller) |
 | `@Guarded(callerIsGuard({ user: source }))` | The user the source names and nobody else: `BYPASS` does not pass | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (another user, or no user from the source) |
 | `@Guarded(platformCallerGuard({ credential: 'registration' \| 'deploymentRequest' }))` | A platform sending valid `xtm-hub-platform-id` and `xtm-hub-platform-token` headers for the required credential: an `Active` registration with a subscribed organization, or a deployment request token in the `Active`, `Pending` or `Provisioning` hub status | `UNAUTHENTICATED` (missing, invalid or unknown credentials, other credential, inactive registration or other hub status, session ignored) |
@@ -103,13 +103,14 @@ Type the arguments with an explicit generic (`orgGuard<MutationXArgs>(…)`), so
   anonymous); `organization` also takes `selectedOrganization`. `orgGuard` and `callerIsGuard` also take an
   `AsyncSource`, such as `fromRecord` below. A missing id answers `NOT_FOUND`.
 - **`anyOf(guardA, guardB)`** allows when one guard allows. It refuses with `UNAUTHENTICATED`, else the first
-  `MISSING_CAPABILITY_*`, else `FORBIDDEN_ACCESS`, else `NOT_FOUND`. The guards must share one principal builder: a user
-  guard cannot be combined with a system or platform guard. It throws when it contains a guard it does not support,
-  such as `sessionCallerGuard()`.
+  `MISSING_CAPABILITY_*`, else `FORBIDDEN_ACCESS`, else `NOT_FOUND`. Guards run in written order and the first that
+  allows wins: write the one that needs no query first, then the one most likely to allow. The guards must share one
+  principal builder: a user guard cannot be combined with a system or platform guard. It throws when it contains a
+  guard it does not support, such as `sessionCallerGuard()`.
 - **`allOf(guardA, guardB)`** allows when every guard allows. Guards run in written order and the first denial wins, so
-  write the one that needs no query first: it spares the queries of the next ones, and the code does not depend on a
-  ranking. The result is the last guard's, which `.targets()` reads: write the `orgGuard` or `serviceGuard` last. Same
-  principal builder rule as `anyOf`.
+  write the one that needs no query first, then the one most likely to deny: it spares the queries of the next ones,
+  and the code does not depend on a ranking. The result is the last guard's, which `.targets()` reads: write the
+  `orgGuard` or `serviceGuard` last. Same principal builder rule as `anyOf`.
 - **`orgGuard({ …, bypass: false })`** treats a `BYPASS` user as any member: use it when the operation acts as a member
   of the organization, whatever the platform rights (a platform admin who is not a member gets `NOT_FOUND`).
 - **Sources of a record.** A source reads the id from the arguments; `fromRecord(load)` reads it from a record the

@@ -46,7 +46,8 @@ class ServiceInstanceQueries {
     QueryResolvers['serviceInstanceLinksByTags']
   > = (_, { tags }) => ServiceInstanceApp.loadLinkServiceInstancesByTags(tags);
 
-  // The app load stays the row filter, and still refuses a platform admin on a hidden instance
+  // loggedInGuard keeps visitors out: the ServiceInstance field resolvers read context.user, which a visitor does not
+  // have. The app load stays the row filter, and still refuses a platform admin on a hidden instance
   @Guarded(
     allOf(
       loggedInGuard(),
