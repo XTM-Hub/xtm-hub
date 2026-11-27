@@ -88,6 +88,7 @@ import { TestNewsfeedHelper } from './test.newsfeed.helper';
 import { TestPlatformAssertionHelper } from './test.platform-assertion.helper';
 import { TestPlatformCallerHelper } from './test.platform-caller.helper';
 import { TestSaasManagerInstanceHelper } from './test.saas-manager-instance.helper';
+import { TestServiceInstanceSceneHelper } from './test.service-instance-scene.helper';
 import { TestServiceHelper } from './test.service.helper';
 import { TestSessionHelper } from './test.session.helper';
 import { TestUserServiceSceneHelper } from './test.user-service-scene.helper';
@@ -107,6 +108,7 @@ export const DEFAULT_ONE_CLICK_PLATFORM_ID =
 export const TestHelper = {
   ...TestDocumentHelper,
   ...TestServiceHelper,
+  ...TestServiceInstanceSceneHelper,
   ...TestPlatformConfigurationHelper,
   ...TestPlatformCallerHelper,
   ...TestPlatformAssertionHelper,
