@@ -25,7 +25,7 @@ mechanisms coexist while modules migrate:
 
 | Mechanism | Where | Used by |
 | --- | --- | --- |
-| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`, `user-service`, `user-service-capability`, `api-token`, `saas-manager-instance`) |
+| `@Public()` / `@Guarded(guard)` on the resolver | `src/security/guarded/` | Migrated modules (`solution-category`, `telemetry`, `manage-product-version`, `subscription`, `news-feed`, `user-service`, `user-service-capability`, `api-token`, `saas-manager-instance`, `service`) |
 | `@auth`, `@service_capa`, `@system_token`, `@platform_token` in the `.graphql` file | `src/security/directive-graphql/` | Every other module. A field with no directive is public there |
 
 **An operation has a directive or a decorator, never both.** Migrating an operation removes its directive in the same
@@ -79,6 +79,8 @@ export default resolvers;
 | `@Guarded(systemCallerGuard([PortalCapability.X, …]))` | A machine with a valid `x-xtm-hub-token` holding every listed scope. The list cannot be empty | `UNAUTHENTICATED` (no or invalid token, session ignored), `FORBIDDEN_ACCESS` (scope missing) |
 | `@Guarded(orgGuard({ organization: selectedOrganization, capabilities: [OrganizationCapability.X, …] }))` | A member of the selected organization holding one of the capabilities (`ADMINISTRATE_ORGANIZATION` implies them all, `[]` requires the membership only); `BYPASS` always, unless `bypass: false` | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member, or no organization from the source), `MISSING_CAPABILITY_ON_ORGANIZATION` (capability missing) |
 | `@Guarded(serviceGuard({ serviceInstance: fromArg('service_instance_id'), capabilities: [ServiceRestriction.X, …] }))` | A user with an access row on the selected organization's subscription to the service instance, holding one of the service capabilities; `BYPASS` always. The list cannot be empty | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (no such service instance, or no access row on it), `MISSING_CAPABILITY_ON_SERVICE` (capability missing) |
+| `@Guarded(subscribedGuard({ serviceInstance: fromArg('service_instance_id') }))` | A member of the selected organization when it subscribes to the service instance, whatever the capabilities: use it to open a service to its subscribers, `serviceGuard` when a capability is needed. `BYPASS` always | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (not a member, no subscription, no such service instance or no id) |
+| `@Guarded(publicServiceInstance({ serviceInstance: fromArg('service_instance_id') }))` | Anyone, anonymous included, on a public service instance: use it for a service page open to visitors. Hands no `checked` | `NOT_FOUND` (hidden or unknown service instance, or no id) |
 | `@Guarded(allOf(sessionCallerGuard(), …))` | A caller who is not authenticated by an API token. Only inside `allOf`: see [Personal API tokens](#personal-api-tokens) | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_ALLOWED_WITH_API_TOKEN` (API token caller) |
 | `@Guarded(callerIsGuard({ user: source }))` | The user the source names and nobody else: `BYPASS` does not pass | `UNAUTHENTICATED` (anonymous or disabled user), `NOT_FOUND` (another user, or no user from the source) |
 | `@Guarded(platformCallerGuard({ credential: 'registration' \| 'deploymentRequest' }))` | A platform sending valid `xtm-hub-platform-id` and `xtm-hub-platform-token` headers for the required credential: an `Active` registration with a subscribed organization, or a deployment request token in the `Active`, `Pending` or `Provisioning` hub status | `UNAUTHENTICATED` (missing, invalid or unknown credentials, other credential, inactive registration or other hub status, session ignored) |
@@ -95,10 +97,11 @@ themselves, others leave it to their caller, so read the filter before calling i
 
 Type the arguments with an explicit generic (`orgGuard<MutationXArgs>(…)`), so a wrong key fails `check-ts`.
 
-- **Sources.** `organization` of `orgGuard`, `serviceInstance` of `serviceGuard` and `user` of `callerIsGuard` take
-  `fromArg('key')` or an inline function `(caller, args) => id` that returns an id of their own type; `organization`
-  also takes `selectedOrganization`. `orgGuard` and `callerIsGuard` also take an `AsyncSource`, such as `fromRecord`
-  below. A missing id answers `NOT_FOUND`.
+- **Sources.** `organization` of `orgGuard`, `serviceInstance` of `serviceGuard`, `subscribedGuard` and
+  `publicServiceInstance`, and `user` of `callerIsGuard` take `fromArg('key')` or an inline function
+  `(caller, args) => id` that returns an id of their own type (the caller of `publicServiceInstance`'s may be
+  anonymous); `organization` also takes `selectedOrganization`. `orgGuard` and `callerIsGuard` also take an
+  `AsyncSource`, such as `fromRecord` below. A missing id answers `NOT_FOUND`.
 - **`anyOf(guardA, guardB)`** allows when one guard allows. It refuses with `UNAUTHENTICATED`, else the first
   `MISSING_CAPABILITY_*`, else `FORBIDDEN_ACCESS`, else `NOT_FOUND`. The guards must share one principal builder: a user
   guard cannot be combined with a system or platform guard. It throws when it contains a guard it does not support,
@@ -119,9 +122,9 @@ Type the arguments with an explicit generic (`orgGuard<MutationXArgs>(…)`), so
   and the organization; anything for `BYPASS`. One missing, foreign or malformed id refuses the whole request with
   `NOT_FOUND`; an empty list is allowed. `serviceInstance` says where the request names the service instance, so the ids must be on
   it. Use it whenever a guard checks an organization or a service from one argument and the operation acts on other ids.
-  A guard that can answer through a `callerIsGuard` (an `anyOf` that contains one, or an `allOf` that ends with it) takes
-  no `.targets()`: `callerIsGuard` allows without what it checked, so the check refuses as soon as the request names an
-  id.
+  A guard that can answer through a `callerIsGuard` or a `publicServiceInstance` (an `anyOf` that contains one, or an
+  `allOf` that ends with it) takes no `.targets()`: they allow without what they checked, so the check refuses as soon
+  as the request names an id.
 - Add an entry to the ownership map (`src/security/guarded/ownership.domain.ts`) before using `belongTo` on a table.
 
 ## Filtering data
