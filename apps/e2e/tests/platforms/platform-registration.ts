@@ -134,15 +134,20 @@ export const describePlatformRegistration = (platform: XtmPlatform) => {
           expect(previousCheck).not.toBeNull();
 
           // The page itself asks the platform to check: a background job of the platform may also do it.
-          const connectivityCheck = page.waitForResponse((response) =>
-            platform.isConnectivityCheckRequest(response.request())
-          );
+          // The body is read as soon as the check answers: a redirect or a retried load of the page
+          // that follows would discard it before the assertion below reads it.
+          let connectivityCheckBody = '';
+          const connectivityCheck = page.waitForResponse(async (response) => {
+            if (!platform.isConnectivityCheckRequest(response.request())) {
+              return false;
+            }
+            connectivityCheckBody = await response.text();
+            return true;
+          });
           await platformPage.navigateToExperience();
           const connectivityCheckResponse = await connectivityCheck;
           expect(connectivityCheckResponse.ok()).toBeTruthy();
-          expect(await connectivityCheckResponse.text()).not.toContain(
-            '"errors"'
-          );
+          expect(connectivityCheckBody).not.toContain('"errors"');
 
           await expect
             .poll(() => getLastConnectivityCheck(platformUrl))
