@@ -49,7 +49,7 @@ src/hooks/                          useGranted, useDecodedParams, ...
 src/lib/graphql-client.ts           portalGraphqlClient — graphql-request client for react-query
 src/i18n/                           next-intl config, locale, request scope
 src/lib/  src/utils/                Helpers, server actions, middleware helpers, query-cache
-graphql/                            *.query.graphql / *.mutation.graphql + generated.ts, mocks.ts (react-query, new work)
+graphql/                            *.query.graphql / *.mutation.graphql + generated.ts, mocks.ts (react-query)
 messages/                           One JSON file per locale (`en` is the source — see `yarn i18n:check`)
 proxy.ts                            Next.js 16 proxy convention (was middleware.ts); i18n + auth/document/GraphQL proxying
 schema.graphql                      Written by the backend on API start, read by graphql-codegen
