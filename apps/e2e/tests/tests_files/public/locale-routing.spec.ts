@@ -75,6 +75,9 @@ test.describe('Locale routing', () => {
       .getByRole('button', { name: 'Ouvrir le menu utilisateur' })
       .click();
     await page.getByRole('menuitem', { name: 'Déconnexion' }).click();
+    // The logout ends on the French public home: wait until that page has loaded, so the
+    // goto below does not abort a redirect still in flight.
+    await page.waitForURL(/\/fr\/?$/);
     await expect(page).toHaveURL(/\/fr/);
     await page.context().clearCookies({ name: 'NEXT_LOCALE' });
 
