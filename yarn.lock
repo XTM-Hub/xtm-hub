@@ -14943,10 +14943,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:6.2.15, jose@npm:^6.2.15":
-  version: 6.2.15
-  resolution: "jose@npm:6.2.15"
-  checksum: 10/57ea834a3aae6612b603dc04e5e068dabf1582934ffc759f004a0c654632bec06e6184aee73246157d03fb56179d50ac4e5c56ad02cf939086ef888ae8d8ebec
+"jose@npm:6.2.18":
+  version: 6.2.18
+  resolution: "jose@npm:6.2.18"
+  checksum: 10/6a3962e4d09599dc359129bf2b29eefcd0436e1a8b1002f53b9e672e7f21df546736d4a5ac53e3cfbfcea9f4126354247d5efcb860e267fda82924e8bd19a8b6
   languageName: node
   linkType: hard
 
@@ -14961,6 +14961,13 @@ __metadata:
   version: 5.10.0
   resolution: "jose@npm:5.10.0"
   checksum: 10/03881d1dfb390dcf50926402edcfe233bf557b5a77321fcb1bdb53453bc1cdd26d2d0a9ab28c7445cbb826881f84fdf5074179700f10c2711ccb9880f51065d7
+  languageName: node
+  linkType: hard
+
+"jose@npm:^6.2.15":
+  version: 6.2.15
+  resolution: "jose@npm:6.2.15"
+  checksum: 10/57ea834a3aae6612b603dc04e5e068dabf1582934ffc759f004a0c654632bec06e6184aee73246157d03fb56179d50ac4e5c56ad02cf939086ef888ae8d8ebec
   languageName: node
   linkType: hard
 
