@@ -8422,12 +8422,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:19.3.0":
-  version: 19.3.0
-  resolution: "@types/react@npm:19.3.0"
+"@types/react@npm:19.3.2":
+  version: 19.3.2
+  resolution: "@types/react@npm:19.3.2"
   dependencies:
     csstype: "npm:^3.2.2"
-  checksum: 10/2f4589222fd9c512e1ef78e65f334ade8777400add8ec0803fcc3a044761679b7984ba8410a890af24255383c3251a568bb692b60acfa22397ba0a64b2e032bf
+  checksum: 10/ea1422b9fa4943aaacca60b44af12263c3f8fde3f07376cf5b119bc52634f03e7f6969c9b9b2e67a481dea1acb0575875ec830a12b8a72d4333d2d892bfc579b
   languageName: node
   linkType: hard
 
@@ -9449,7 +9449,7 @@ __metadata:
     "@testing-library/react": "npm:16.3.3"
     "@testing-library/user-event": "npm:14.6.13"
     "@types/node": "catalog:"
-    "@types/react": "npm:19.3.0"
+    "@types/react": "npm:19.3.2"
     "@types/react-dom": "npm:19.3.0"
     "@uiw/react-md-editor": "npm:4.2.4"
     "@vitejs/plugin-react": "npm:6.3.0"
